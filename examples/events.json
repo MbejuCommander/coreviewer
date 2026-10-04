@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "events": [
+    {
+      "context": {
+        "id": "5d68d88a-edd4-46db-aaf4-0f15795781b2",
+        "timestamp": 1790445159189,
+        "server": "simulation",
+        "world": "simulation_world",
+        "dimension": "minecraft:overworld",
+        "position": {
+          "x": 100,
+          "y": 64,
+          "z": 100
+        },
+        "actor": "DemoModerator",
+        "actorUuid": null,
+        "simulated": true,
+        "source": "SIMULATED"
+      },
+      "type": "BLOCK_BREAK",
+      "block": "minecraft:diamond_ore"
+    },
+    {
+      "context": {
+        "id": "0fe520bc-825e-44cc-af2c-53cfc423f304",
+        "timestamp": 1790445160189,
+        "server": "simulation",
+        "world": "simulation_world",
+        "dimension": "minecraft:overworld",
+        "position": {
+          "x": 101,
+          "y": 64,
+          "z": 100
+        },
+        "actor": "DemoModerator",
+        "actorUuid": null,
+        "simulated": true,
+        "source": "SIMULATED"
+      },
+      "type": "BLOCK_PLACE",
+      "block": "minecraft:stone"
+    },
+    {
+      "context": {
+        "id": "7f623204-b6d5-4d9a-8d64-6e3ecbce7573",
+        "timestamp": 1790445161189,
+        "server": "simulation",
+        "world": "simulation_world",
+        "dimension": "minecraft:overworld",
+        "position": {
+          "x": 102,
+          "y": 64,
+          "z": 100
+        },
+        "actor": "DemoZombie",
+        "actorUuid": null,
+        "simulated": true,
+        "source": "SIMULATED"
+      },
+      "type": "PLAYER_KILL",
+      "victim": "DemoVictim",
+      "victimUuid": null,
+      "entity": "minecraft:player",
+      "cause": "Killed by Zombie (simulated)"
+    },
+    {
+      "context": {
+        "id": "0ea531cb-7f7a-4717-b591-4530d9381018",
+        "timestamp": 1790445162189,
+        "server": "simulation",
+        "world": "simulation_world",
+        "dimension": "minecraft:overworld",
+        "position": {
+          "x": 103,
+          "y": 64,
+          "z": 100
+        },
+        "actor": "DemoModerator",
+        "actorUuid": null,
+        "simulated": true,
+        "source": "SIMULATED"
+      },
+      "type": "MOB_KILL",
+      "victim": null,
+      "victimUuid": null,
+      "entity": "minecraft:zombie",
+      "cause": "Killed by Player (simulated)"
+    },
+    {
+      "context": {
+        "id": "0ec3535c-32e5-49cb-ae98-54bfb65ae572",
+        "timestamp": 1790445163189,
+        "server": "simulation",
+        "world": "simulation_world",
+        "dimension": "minecraft:overworld",
+        "position": {
+          "x": 104,
+          "y": 64,
+          "z": 100
+        },
+        "actor": "DemoModerator",
+        "actorUuid": null,
+        "simulated": true,
+        "source": "SIMULATED"
+      },
+      "type": "ITEM_ADD",
+      "item": "minecraft:diamond",
+      "quantity": 3
+    },
+    {
+      "context": {
+        "id": "5571b94f-d0e8-48d8-8cb9-2cb8fd8b3f4f",
+        "timestamp": 1790445164189,
+        "server": "simulation",
+        "world": "simulation_world",
+        "dimension": "minecraft:overworld",
+        "position": {
+          "x": 105,
+          "y": 64,
+          "z": 100
+        },
+        "actor": "DemoModerator",
+        "actorUuid": null,
+        "simulated": true,
+        "source": "SIMULATED"
+      },
+      "type": "ITEM_REMOVE",
+      "item": "minecraft:diamond",
+      "quantity": 2
+    }
+  ]
+}

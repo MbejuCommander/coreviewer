@@ -1,0 +1,22 @@
+{
+  "coreviewer.name": "Coreviewer investigator",
+  "coreviewer.phase": "Phase 5 - Indexed investigation",
+  "coreviewer.event.block_break": "Block break",
+  "coreviewer.event.block_place": "Block place",
+  "coreviewer.event.player_kill": "Player kill",
+  "coreviewer.event.mob_kill": "Mob kill",
+  "coreviewer.event.item_add": "Item add",
+  "coreviewer.event.item_remove": "Item remove",
+  "coreviewer.simulated": "SIMULATED - not server evidence",
+  "key.category.coreviewer.replay": "Coreviewer Replay",
+  "key.coreviewer.play": "Replay: Play / Pause",
+  "key.coreviewer.forward": "Replay: Next Action",
+  "key.coreviewer.backward": "Replay: Previous Action",
+  "key.coreviewer.start": "Replay: Start / Load World",
+  "key.coreviewer.restart": "Replay: Restart",
+  "key.coreviewer.stop": "Replay: Stop",
+  "key.coreviewer.previous_page": "Static: Previous Page",
+  "key.coreviewer.next_page": "Static: Next Page",
+  "key.coreviewer.static_menu": "Open Static Menu",
+  "key.coreviewer.replay_menu": "Open Replay Menu"
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "coreviewer",
+  "version": "${version}",
+  "name": "Coreviewer investigator",
+  "icon": "assets/coreviewer/icon.png",
+  "description": "CoreProtect chat capture, indexed historical investigation and event replay with bounded caches and loaded-chunk rendering.",
+  "environment": "client",
+  "accessWidener": "coreviewer.accesswidener",
+  "license": "MIT",
+  "entrypoints": {
+    "client": [
+      "dev.coreviewer.CoreTraceClient"
+    ],
+    "modmenu": [
+      "dev.coreviewer.ui.CoreTraceModMenu"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "fabric-api": ">=0.161.0",
+    "cloth-config": ">=26.3.158"
+  },
+  "suggests": {
+    "modmenu": ">=21.0.0"
+  },
+  "mixins": [
+    "coreviewer.mixins.json"
+  ]
+}

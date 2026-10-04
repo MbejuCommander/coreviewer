@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "coreviewer-test",
+  "version": "0.1.0",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "dev.coreviewer.PhaseOneGameTest",
+      "dev.coreviewer.PhaseThreeGameTest",
+      "dev.coreviewer.PhaseFourGameTest",
+      "dev.coreviewer.PhaseFiveGameTest",
+      "dev.coreviewer.CustomizationGameTest"
+    ]
+  }
+}

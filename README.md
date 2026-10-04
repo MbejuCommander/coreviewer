@@ -2,9 +2,7 @@
 
 Client-only Fabric mod for **Minecraft Java 26.3**, for moderators who have permission to run CoreProtect commands. The mod reads English lookup responses displayed to the client. It does not access SQL, server files, or CoreProtect's server-side Java API.
 
-Version 0.6.0 adds editable numeric settings, capture completion/reset controls, searchable sound previews, chronological static pages, rolling replay windows and Smart Timeline. All commands use **`/coreviewer`**.
 
-Version 0.6.1 gives Coreviewer its own Fabric ID (`coreviewer`), Java package, resource namespace, key names and `.minecraft/coreviewer/` data directory. It can now be installed alongside the earlier CoreTrace mod, whose ID is `coretrace`. If the Coreviewer data directory does not exist yet, it copies available configuration, events and backups from `.minecraft/coretrace/` once; the original files remain untouched. Imported Auto Capture and Auto Page Advance are switched OFF so the two mods do not both schedule pagination immediately. Re-enable Coreviewer capture when ready. Later writes by either mod remain in their own folders.
 
 ## Installation
 
@@ -175,7 +173,7 @@ Version 0.6.1 passed **40 unit tests and all five isolated Minecraft client scen
 
 The sparse-history regression uses **100,001 events** and verifies that its local query examines **one event in one chunk**. Dense areas still cost work on the selection worker; this is an algorithmic check, not an FPS benchmark or a guarantee for arbitrary hardware.
 
-**Upgrade and coexistence:** Replace Coreviewer 0.5.0/0.6.0 with this JAR; do not keep multiple Coreviewer versions installed. CoreTrace can remain installed because it has a different Fabric ID, package, resource namespace, key names, command root and data folder. Coreviewer uses `/coreviewer`; CoreTrace keeps its own commands. If both mods listen to the same CoreProtect lookup, both may record it; keep only one automatic pager enabled for a given investigation. The initial data copy is a snapshot, not ongoing synchronization. Existing backups are copied without deleting the originals. Live-server compatibility remains a separate validation step.
+
 
 References: [CoreProtect commands](https://docs.coreprotect.net/commands/), [CoreProtect lookup implementation](https://github.com/PlayPro/CoreProtect/blob/master/src/main/java/net/coreprotect/command/lookup/StandardLookupThread.java), [CoreProtect chat formatting](https://github.com/PlayPro/CoreProtect/blob/master/src/main/java/net/coreprotect/utility/ChatUtils.java), [CoreProtect API](https://docs.coreprotect.net/api/).
 

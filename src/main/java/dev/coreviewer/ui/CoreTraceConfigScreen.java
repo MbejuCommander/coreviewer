@@ -18,11 +18,17 @@ public final class CoreTraceConfigScreen {
     }
 
     public static Screen create(Screen parent) {
+        return createEditor(parent, null);
+    }
+
+    public static Screen createEditor(Screen parent, String category) {
         CoreTraceConfig c = CoreTraceClient.service.config();
         var builder =
                 ConfigBuilder.create()
                         .setParentScreen(parent)
-                        .setTitle(text("Coreviewer investigator — Settings"));
+                        .setTitle(text("Coreviewer investigator — Settings"))
+                        .setShouldListSmoothScroll(c.menuAnimations)
+                        .setShouldTabsSmoothScroll(c.menuAnimations);
         var e = builder.entryBuilder();
         var general = builder.getOrCreateCategory(text("GENERAL"));
         general.addEntry(
@@ -41,7 +47,70 @@ public final class CoreTraceConfigScreen {
                 "OFF blocks investigation actions. Configuration remains available. Static"
                         + " views are hidden and pending capture is cancelled.");
         number(general, e, "Event Radius", c.eventRadius, 100, 1, v -> c.eventRadius = v);
+        toggle(
+                general,
+                e,
+                "Follow Events with Teleport",
+                c.teleportToEvents,
+                false,
+                v -> c.teleportToEvents = v,
+                "When the next event is outside Event Radius, send a teleport using its recorded"
+                    + " coordinates and world. Requires server permission. Missing coordinates,"
+                    + " demos and Respect Radius prevent automatic teleport. Failed teleports are"
+                    + " not retried.");
+        general.addEntry(
+                e.startStrField(text("Teleport Command"), c.teleportCommand)
+                        .setDefaultValue("/co teleport #{world} {x} {y} {z}")
+                        .setTooltip(
+                                text(
+                                        "{world}: exact CoreProtect world name. {x}, {y}, {z}:"
+                                            + " recorded coordinates. Separate arguments with"
+                                            + " spaces. Default: /co teleport #{world} {x} {y} {z}."
+                                            + " Custom example: /tp {world} {x} {y} {z} only if"
+                                            + " your server supports a world argument; vanilla /tp"
+                                            + " does not. Keep # in the template if required."))
+                        .setSaveConsumer(v -> c.teleportCommand = v)
+                        .build());
+        toggle(
+                general,
+                e,
+                "Respect Radius",
+                c.respectRadius,
+                false,
+                v -> c.respectRadius = v,
+                "Restrict the timeline to Event Radius around your position when loading the view."
+                    + " Outside events are excluded from pages and replay. Reload after changing"
+                    + " radius or origin. Overrides automatic teleport.");
+        toggle(
+                general,
+                e,
+                "Menu Animations",
+                c.menuAnimations,
+                true,
+                v -> c.menuAnimations = v,
+                "Smooth category scrolling and subtle hover transitions. Turn OFF for reduced"
+                        + " motion.");
         var capture = builder.getOrCreateCategory(text("CAPTURE"));
+        capture.addEntry(
+                e.startStrField(text("Capture Folder Name"), c.captureFolderName)
+                        .setDefaultValue("")
+                        .setTooltip(
+                                text(
+                                        "Each capture saves CSV files in its own subfolder. Blank"
+                                                + " uses a timestamp and random ID. Repeated names"
+                                                + " receive (2), (3), etc. Simple Mode replaces its"
+                                                + " previous active CSV after new data is saved."))
+                        .setErrorSupplier(
+                                v -> {
+                                    try {
+                                        dev.coreviewer.storage.CaptureFolders.validate(v);
+                                        return java.util.Optional.empty();
+                                    } catch (Exception ex) {
+                                        return java.util.Optional.of(text(ex.getMessage()));
+                                    }
+                                })
+                        .setSaveConsumer(v -> c.captureFolderName = v.strip())
+                        .build());
         capture.addEntry(
                 e.startTextDescription(
                                 text(
@@ -80,7 +149,7 @@ public final class CoreTraceConfigScreen {
                 true,
                 v -> c.resetCaptureOnComplete = v,
                 "After successful automatic pagination, turn Auto Capture and Auto Page Advance"
-                    + " OFF.");
+                        + " OFF.");
         toggle(
                 capture,
                 e,
@@ -113,44 +182,48 @@ public final class CoreTraceConfigScreen {
         csv.addEntry(
                 e.startTextDescription(
                                 text(
-                                        "Files: coreviewer/events.json, events.csv and config.json"
-                                                + " inside the game directory. JSON is the reload"
-                                                + " source; CSV is an export."))
+                                        "Captures save automatically to coreviewer/csv."
+                                            + " Import/export use this shared folder. Copy"
+                                            + " CoreTrace CSVs here, Refresh, then select them."
+                                            + " Imports without server metadata bind to the current"
+                                            + " server when selected."))
                         .build());
         toggle(
                 csv,
                 e,
-                "Auto Save",
-                c.autoSave,
-                true,
-                v -> c.autoSave = v,
-                "Save each dataset change to JSON and CSV. OFF requires explicit Save; unsaved data"
-                        + " does not survive exit.");
-        toggle(
-                csv,
-                e,
-                "Backup",
-                c.backup,
-                true,
-                v -> c.backup = v,
-                "Keep the previous events.json.bak and events.csv.bak before each save.");
-        toggle(
-                csv,
-                e,
-                "Replace Previous Capture",
-                c.clearPreviousCapture,
-                true,
-                v -> c.clearPreviousCapture = v,
-                "Replace previously captured records on this server only after a new automatic"
-                    + " capture succeeds. Other servers and simulated records remain.");
-        toggle(
-                csv,
-                e,
-                "Notify Capture Replacement",
-                c.clearCaptureMessage,
-                true,
-                v -> c.clearCaptureMessage = v,
-                "Notify in chat after successful replacement. Auto Save OFF still requires Save.");
+                "Simple Mode",
+                c.simpleMode,
+                false,
+                v -> c.simpleMode = v,
+                "Warning: Simple Mode keeps one active CSV. A new capture replaces it. Existing"
+                        + " files move to coreviewer/csv-archive when enabled. File selection is"
+                        + " disabled in this mode.");
+        csv.addEntry(
+                e.startTextDescription(
+                                text(
+                                        "⚠ Simple Mode replaces the previous capture. Save settings"
+                                                + " before changing the CSV selection."))
+                        .build());
+        csv.addEntry(
+                new ActionEntry(
+                        "Open Import / Export Folder", CsvLibraryScreen::openFolder, () -> true));
+        csv.addEntry(
+                new ActionEntry(
+                        "Select CSV Files",
+                        () -> {
+                            var mc = net.minecraft.client.Minecraft.getInstance();
+                            CoreTraceClient.service
+                                    .refreshCsv(CoreTraceClient.serverIdentity())
+                                    .thenAccept(
+                                            message ->
+                                                    mc.execute(
+                                                            () ->
+                                                                    mc.gui.setScreen(
+                                                                            new CsvLibraryScreen(
+                                                                                    mc.gui
+                                                                                            .screen()))));
+                        },
+                        () -> !c.simpleMode));
         var view = builder.getOrCreateCategory(text("STATIC VIEW"));
         view.addEntry(
                 e.startTextDescription(
@@ -183,6 +256,23 @@ public final class CoreTraceConfigScreen {
                 true,
                 v -> c.itemView = v,
                 "Applies to the active static investigation view.");
+        toggle(
+                view,
+                e,
+                "Container View",
+                c.containerView,
+                true,
+                v -> c.containerView = v,
+                "Chest-style item slots and quantities. Green means added; red means removed.");
+        toggle(
+                view,
+                e,
+                "Session View",
+                c.sessionView,
+                true,
+                v -> c.sessionView = v,
+                "Player holograms with available current skins and green login/red logout borders."
+                    + " Missing skins use a default.");
         toggle(
                 view,
                 e,
@@ -256,7 +346,8 @@ public final class CoreTraceConfigScreen {
                 c.playerDeaths,
                 true,
                 v -> c.playerDeaths = v,
-                "Render a frozen default figure; missing causes remain unknown.");
+                "Render a stone memorial with the victim's available current skin and vanilla"
+                    + " flowers. Missing skins and causes retain a fallback.");
         toggle(
                 view,
                 e,
@@ -330,6 +421,15 @@ public final class CoreTraceConfigScreen {
                         .setDefaultValue(0xFFFF55)
                         .setSaveConsumer(v -> c.staticHudColor = v)
                         .build());
+        toggle(
+                view,
+                e,
+                "Show Server Time",
+                c.showServerTime,
+                true,
+                v -> c.showServerTime = v,
+                "Show each event timestamp in UTC in static view and replay. Approximate chat times"
+                        + " are marked ~; missing times remain unknown.");
         var replay = builder.getOrCreateCategory(text("REPLAY"));
         replay.addEntry(
                 e.startTextDescription(
@@ -338,6 +438,7 @@ public final class CoreTraceConfigScreen {
                                             + " apply in the world. Active shortcuts take priority"
                                             + " over vanilla keys."))
                         .build());
+        replay.addEntry(new SmartTimelineEntry(c));
         speed(replay, e, "Block Break Speed", c.blockBreakSpeed, v -> c.blockBreakSpeed = v);
         speed(replay, e, "Block Place Speed", c.blockPlaceSpeed, v -> c.blockPlaceSpeed = v);
         speed(replay, e, "Timeline Speed", c.timelineSpeed, v -> c.timelineSpeed = v);
@@ -353,17 +454,9 @@ public final class CoreTraceConfigScreen {
                 e,
                 "Maximum Visible Events",
                 c.replayVisibleEvents,
-                20,
+                10,
                 1,
                 v -> c.replayVisibleEvents = v);
-        toggle(
-                replay,
-                e,
-                "Smart Timeline",
-                c.smartTimeline,
-                true,
-                v -> c.smartTimeline = v,
-                "Skip idle gaps longer than 10 seconds after allowing block animations to finish.");
         toggle(
                 replay,
                 e,
@@ -372,7 +465,7 @@ public final class CoreTraceConfigScreen {
                 true,
                 v -> c.replayHud = v,
                 "Show reached/total actions and the current visual window. Hidden at completion or"
-                    + " after the pause timeout.");
+                        + " after the pause timeout.");
         number(
                 replay,
                 e,
@@ -386,8 +479,26 @@ public final class CoreTraceConfigScreen {
                         .setDefaultValue(0xFFFF55)
                         .setSaveConsumer(v -> c.replayHudColor = v)
                         .build());
+        var stats = builder.getOrCreateCategory(text("STATISTICS"));
+        stats.addEntry(
+                e.startTextDescription(
+                                text(
+                                        "Uses selected CSVs. Event counts and item quantities"
+                                                + " remain separate; unknown amounts are not"
+                                                + " estimated."))
+                        .build());
+        stats.addEntry(
+                new ActionEntry(
+                        "Open Statistics",
+                        () -> {
+                            var mc = net.minecraft.client.Minecraft.getInstance();
+                            mc.gui.setScreen(new StatisticsScreen(mc.gui.screen()));
+                        },
+                        () -> CoreTraceClient.service.enabled()));
         builder.setSavingRunnable(
                 () -> CoreTraceClient.notifyResult(CoreTraceClient.service.configure(c)));
+        if (category != null)
+            builder.setFallbackCategory(builder.getOrCreateCategory(text(category)));
         return builder.build();
     }
 

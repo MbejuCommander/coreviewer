@@ -6,5 +6,9 @@ public enum EventType {
     PLAYER_KILL,
     MOB_KILL,
     ITEM_ADD,
-    ITEM_REMOVE
+    ITEM_REMOVE,
+    CONTAINER_ADD,
+    CONTAINER_REMOVE,
+    SESSION_LOGIN,
+    SESSION_LOGOUT
 }

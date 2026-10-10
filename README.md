@@ -1,180 +1,168 @@
-# Coreviewer investigator — 0.6.1
+# Coreviewer investigator — 0.9.0
 
-Client-only Fabric mod for **Minecraft Java 26.3**, for moderators who have permission to run CoreProtect commands. The mod reads English lookup responses displayed to the client. It does not access SQL, server files, or CoreProtect's server-side Java API.
+Client-only Fabric investigation tool for Minecraft Java **26.3**. Moderators capture English CoreProtect command responses or import CoreTrace CSVs, then inspect chronological static views, event replays and statistics. No SQL, server files or server-side CoreProtect API access is required. All mod text is in English.
 
+## Quick start
 
+1. Install the required Fabric dependencies listed below and put the Coreviewer JAR in your client's `mods` folder.
+2. Join a server with CoreProtect command permission. Open **Mod Menu → Coreviewer investigator → Configure** and enable **COREVIEWER ENABLED** and **Auto Capture**.
+3. Run `/co lookup r:100 t:1h` for passive capture. To fetch later pages automatically, enable **AUTO PAGE ADVANCE** before starting a lookup. Coreviewer saves supported events in its CSV library.
+4. Open `/coreviewer static` for a paged world view, `/coreviewer replay` for chronological playback, or **Statistics** for a player and material breakdown. Select the matching CoreProtect world in static/replay.
+
+For a previously exported investigation, copy CSV files into `<game directory>/coreviewer/csv/`, then use **Settings → CSV → Select CSV Files** to choose them. You can place CSV files inside subfolders.
+
+## Guide contents
+
+- [Installation](#installation) · [Settings](#settings) · [Capture](#capture)
+- [CSV library and imports](#csv-library-and-imports) · [Radius and teleport](#general-radius-and-teleport)
+- [Static view](#static-view) · [Replay](#replay) · [Statistics](#statistics)
+- [Supported evidence and limits](#supported-evidence-and-limits) · [Files and commands](#files-and-commands)
+- [Development and validation](#development-and-validation)
+
+This README can be copied into a GitHub Wiki `Home` page. In a separate Wiki repository, relative screenshot links such as `docs/static-view.png` must be replaced with links to the main repository's `docs/` files.
 
 ## Installation
 
-Use Java 25+, Minecraft 26.3 and Fabric Loader 0.19.5+. Put the release jar in your client's `mods` folder together with:
+Use **JDK/Java 25**, Minecraft **26.3**, Fabric Loader **0.19.5+**, Fabric API **0.161.0+26.3**, Cloth Config **26.3.158** and optionally Mod Menu **21.0.0**. Dependencies are not bundled. Install `Coreviewer-Investigator-0.9.0-MC26.3.jar` in the client `mods` folder, replacing the previous Coreviewer JAR.
 
-- Fabric API `0.161.0+26.3`
-- Cloth Config API `26.3.158` for Fabric
-- Mod Menu `21.0.0` (recommended)
+Coreviewer uses mod ID `coreviewer`, commands `/coreviewer` and its own data directory. CoreTrace (`coretrace`) can remain installed. Enable only one automatic CoreProtect pager per investigation. The server must already provide CoreProtect and grant the required command permissions.
 
-Dependencies are not bundled. No Coreviewer server plugin is required; the server must already provide CoreProtect and grant you lookup permissions.
+## Settings
 
-## Capture a lookup
+Configure opens Cloth Config directly; the intermediate dashboard has been removed. **General → Menu Animations** controls smooth scrolling and subtle transitions. Settings retain category tabs, search, reset and Save & Quit controls. The folder buttons launch the operating system file manager asynchronously. Historical block rendering supports Minecraft's Improved Transparency option in both through-wall and depth-tested modes.
 
-1. Join your server and open `/coreviewer config` or Mod Menu > Coreviewer investigator > Configure.
-2. Keep **COREVIEWER ENABLED** and **Auto Capture** ON.
-3. For passive capture, keep **AUTO PAGE ADVANCE OFF** and run `/co lookup r:100 t:1h`, `/co l ...`, or `/co near` yourself. Coreviewer records supported response rows and sends no commands.
-4. For automatic pagination, turn **AUTO PAGE ADVANCE ON**. Run a CoreProtect lookup manually, or open `/coreviewer` > **Capture**, edit the lookup parameters and click **Start lookup**. `/coreviewer lookup r:100 t:1h` does the same.
-5. The engine reads `Page X/Y`, waits **Command Delay**, and requests `/co l <next page>`. Enter any positive whole-number delay; the default is **1500 ms**. Blank input restores 1500.
-6. Use `/coreviewer status` to inspect capture/storage status. Use `/coreviewer stop` or **Stop capture** to cancel outstanding work.
+## Capture
 
-Enabling the mod or joining a server never starts a lookup automatically. In passive mode the Start button explains that a manual query is required. Event Radius supplies the default lookup radius and limits the static view around the camera. Custom lookup parameters are passed to CoreProtect for validation. Only the `co/coreprotect lookup`, `l` and `near` command families can be scheduled.
+1. Open `/coreviewer config` or Mod Menu → Coreviewer → Configure.
+2. Enable **COREVIEWER ENABLED** and **Auto Capture**.
+3. With **AUTO PAGE ADVANCE OFF**, run `/co lookup`, `/co l` or `/co near` manually. Coreviewer captures the response without sending pagination commands.
+4. With **AUTO PAGE ADVANCE ON**, run a lookup or use Dashboard → Capture → Start lookup. The scheduler reads `Page X/Y`, waits **Command Delay** (default **1500 ms**), then requests `/co l <next page>`.
+5. Every capture saves automatically as `csv/<capture folder>/events.csv`. Set **Capture → Capture Folder Name** to choose the folder; blank generates a timestamp plus random ID. Repeated names receive `(2)`, `(3)`, etc., without overwriting existing investigations. Parsed batches are persisted during capture; cancelled/incomplete queries may therefore leave a partial CSV. A query containing no supported events creates no new file.
+6. Successful automatic completion disables both capture switches by default. **Disable Capture After Completion** and **Notify Capture Reset** control this behavior and its message independently. Optional start/end sounds default OFF; the vanilla sound picker has search, preview and stop controls.
 
-Rows are parsed in batches at page boundaries or after a short quiet interval. With automatic replacement enabled, batches are staged and saved together only after successful completion; append mode saves each batch when Auto Save is ON. A query with no pagination footer expires after 30 seconds. The scheduler has one outstanding request, does not retry unanswered requests, rejects unexpected/repeated pages, and limits a session to 10,000 pages and a buffered response to 4,096 messages. Permission/no-result errors stop it. Disconnecting, changing worlds, Stop, Clear or Reload cancel pending capture. Switching Auto Page Advance OFF cancels queued commands; switching it back ON requires a new lookup.
+Capture starts only after an outgoing supported lookup command. It ignores player chat, action bars and its own feedback. One request can be outstanding; commands are delayed, unanswered pages are not retried, and errors, repeated pages, disconnects or a 30-second timeout stop the session. Chat does not contain reliable query IDs, so avoid overlapping lookups. Server system messages are not authenticated CoreProtect evidence.
 
-Avoid issuing overlapping CoreProtect queries: chat responses do not carry request IDs. Coreviewer listens only to system messages during a lookup session initiated by an observed outgoing command. It ignores normal player-chat events, action-bar messages and its own feedback. Server system messages are not cryptographic proof of CoreProtect origin.
+## CSV library and imports
 
-## New controls and defaults (0.6.0)
+Open **Settings → CSV → Open Import / Export Folder**. Both imports and exports use `<game directory>/coreviewer/csv/`.
 
-Radius, command delay, event limits and message durations use editable text fields. Leave **Event Radius** blank for **100**, **Command Delay (ms)** for **1500**, Static **Maximum Visible Events** for **10**, and Replay **Maximum Visible Events** for **20**. Positive integers are accepted without preset lists; durations accept zero for a persistent message. Large chosen limits can increase memory/rendering work.
+Copy CSVs exported by **CoreTrace 1.4.1+26.3** into this folder or any of its subfolders. Nested CSVs are discovered recursively and listed with their relative folder paths. Open **Select CSV Files**, click **Refresh**, and select the files to combine. Green checkboxes indicate selection. The screen includes Select all, Deselect all, up/down ordering, individual deletion, and Delete all CSVs. Deletion asks for confirmation and affects CSVs in this shared folder and its subfolders only. After deletion, empty parent folders are removed up to (but never including) the shared CSV root. A folder containing another CSV or any other file is preserved. It does not delete external CoreTrace files or archived CSVs.
 
-**CAPTURE:** **Disable Capture After Completion** defaults ON. After the final page of a successful automatic lookup has been parsed and saved, both Auto Capture and Auto Page Advance switch OFF. **Notify Capture Reset** separately controls its chat message and defaults ON. Enable the capture switches again before the next automatic lookup. Manual captures, cancelled queries, errors and timeouts do not trigger a successful-completion reset.
+Files without server metadata are associated with the current server when first selected. Import them while connected to the intended server. Coreviewer exports retain their own server metadata. File selection/order is saved in `csv-library.json`. Reordering changes the file list and tie order, but **all selected events are sorted by recorded timestamp** for static/replay: an earlier block break precedes a later item action even when its CSV is lower in the list. Repeated Coreviewer event IDs are deduplicated; overlapping queries with distinct IDs may still overlap.
 
-**Capture Sounds** defaults OFF. Choose start and completion sounds using each **Search sounds / Preview** button. The picker searches all registered vanilla sound events by name, supports result pages, plays a preview, and lets you stop it or select a sound. Preview works even when automatic capture sounds are disabled. Save the settings to retain the choice. Minecraft volume settings and resource packs still affect the audio.
+**Simple Mode** defaults OFF. Enabling it merges the currently selected events into a new capture folder and moves other existing library CSVs to `coreviewer/csv-archive/before-simple-<id>/`. The warning explains that subsequent captures replace the single active CSV; selection is unavailable in this mode. The previous simple capture is replaced when the new capture first saves supported events, including a partial capture. An empty capture leaves it intact. Files copied manually into the folder while Simple Mode is ON remain unselected until the mode is disabled. Archives are never automatically deleted. `simple-csv.json` remembers the active file across restarts; older root-level `simple.csv` files remain supported.
 
-**CSV:** **Replace Previous Capture** defaults ON. Automatic captures are staged until the last page succeeds. Then previously captured CoreProtect records for the same server are replaced with the new capture; simulated records and other servers remain. Errors/cancellation leave the prior dataset intact. With Auto Save ON, JSON and CSV are updated and Backup retains the previous files. With Auto Save OFF, only memory is replaced and Save is still required. **Notify Capture Replacement** controls the completion chat notification independently and defaults ON. OFF preserves append behavior.
+Auto Save, Backup and Replace Previous Capture controls have been removed. Capture saving is always automatic. The old configuration properties may remain for migration, but no longer control CSV saving. Legacy `events.json` is migrated once to `migrated-events.csv` when no library manifest exists; originals remain intact. CSV is now the investigation data source, not JSON.
 
-**STATIC VIEW:** **V** selects the previous page, **B** the next page, and **G** opens `/coreviewer static`. All are configurable. The static screen also has Previous/Next page buttons. A 100-action history with page size 10 has ten pages. **Show Page Progress** displays `Actions 11–20/100`, centered above the health bar; the default color is yellow and duration is 10 seconds after opening/changing a page. Color, visibility and duration are configurable; zero seconds keeps it displayed. Pages use all positioned actions in the bound world; filters/radius/unloaded chunks can make fewer of those actions visible.
+## General: radius and teleport
 
-**REPLAY:** **J** performs Start / Load World, **K** restarts paused, **L** stops and hides replay, and **H** opens `/coreviewer replay`. Together with Right Shift, comma and period, these shortcuts can be reassigned and appear in the replay HUD. Start uses the current bound world (or the only available captured world); if selection is ambiguous, it opens the world selector. During a temporary demo it reloads that demo.
+**Event Radius** accepts any positive integer; blank restores **100**. It supplies the default lookup radius and limits nearby rendering. It does not change an already executed server lookup.
 
-**Show Replay Progress** displays reached/total actions plus the size of the current rolling window, on a separate line above the health bar. It remains during playback, disappears when all actions have been reached or replay is stopped, and hides 10 seconds after pausing. Its color, visibility and pause timeout are configurable; zero disables the pause timeout. Static progress is hidden while replay is active, so the messages never overlap.
+**Respect Radius** defaults OFF. OFF preserves the entire selected world's timeline, including distant events. ON filters events to the radius around your position **when loading the view**, excluding outside events from pages and replay. Reload after moving the center or changing the setting. Rendering still requires loaded client chunks.
 
-Existing settings are retained. On the first 0.6.0 load, old factory values (3000 ms, 500 static events, Space/Right/Left) migrate to the requested new defaults; other custom values remain. After migration, deliberately saving any of those old values preserves your choice.
+**Follow Events with Teleport** defaults OFF. When enabled, the first action of a static page or the currently reached replay action can trigger a command if outside Event Radius. It needs recorded coordinates/world and server permissions. It does not run for demo scenes, open menus, active captures, or when Respect Radius is ON. There is at most one attempt per target, spaced by at least 1500 ms or Command Delay, whichever is larger. Failed commands are not retried.
 
-## Supported records and evidence limits
-
-The parser supports the standard **English** CoreProtect lookup format, including separate coordinate lines such as `^ (x-12/y64/z30/world)` and exact timestamp text in hover components.
-
-| Visible action | Local event |
-| --- | --- |
-| broke / placed | BLOCK_BREAK / BLOCK_PLACE |
-| killed | PLAYER_KILL or MOB_KILL |
-| added / removed | ITEM_ADD / ITEM_REMOVE |
-| picked up / withdrew | ITEM_ADD |
-| dropped / deposited / threw / shot | ITEM_REMOVE |
-
-- Hover timestamps are preferred. Without one, the displayed relative age is converted using the client's receipt time and marked **COREPROTECT_CHAT_APPROXIMATE** in `source`. Relative times are rounded by CoreProtect and are not exact forensic timestamps.
-- Actor/victim UUIDs and death causes remain null when not supplied. The actor of a kill row is the killer. No player movement or full block state can be reconstructed from these rows.
-- Coordinates and server world names come only from visible coordinate text. Inventory-only responses may omit them: position stays null and world is empty. Client dimension remains null; server world names are not guessed to match client dimensions.
-- Mob names are recognized against the client's entity registry. CoreProtect does not explicitly distinguish a player username from an identical mob identifier in plain chat: a player named exactly `zombie`, for example, is ambiguous and will be classified as that mob. Custom entity identifiers absent from the client registry are also ambiguous. Inspect the retained raw row in `source` before relying on the classification.
-- The event ID is a locally generated UUID, not a CoreProtect database ID. In append mode, re-running a query appends another observation; automatic replacement instead replaces the previous same-server capture. Cross-query deduplication is intentionally not attempted because identical same-second actions can be legitimate distinct records. Repeated pagination footers within one session stop capture.
-- The raw action row is retained in `source`. Unsupported/localized/malformed rows are skipped; the storage status reports the count. Hover-only origin coordinates are not substituted for event coordinates.
-- Simulation remains available for local testing and is explicitly marked `simulated: true`; do not mix demonstration records with evidence exports. Clear them before a real investigation.
-
-## Static View (Phase 3)
-
-Open `/coreviewer static` or **Static** in the dashboard after joining a world.
-
-1. Select the server world reported by CoreProtect. The selector includes only positioned, non-simulated records belonging to the current server address.
-2. Click **Show selected world** to bind that server world to your current client dimension. This is an explicit moderator choice; the mod cannot infer server world names from dimension IDs. Check that you are in the matching world before binding.
-3. Use **Hide view**, disable **COREVIEWER ENABLED**, disconnect or change dimensions to end the binding.
-4. **Preview demo** creates seven temporary visual examples near your current position toward +Z. Every label says `[DEMO]`. These examples are neither saved nor inserted into the world and replace the active view until hidden.
-
-Rendering options are in **Mod Menu / Settings > STATIC VIEW**:
-
-- **Block View**, **Ghost Blocks**, **Outline**: textured translucent default block models, outlined cubes, or both. Unknown/unsupported block models use an outline fallback. Separate break/place colors, alpha and optional texture tint are available. With texture tint OFF, block textures retain their native colors.
-- **Render Behind Walls**: ghost blocks, location markers, labels and arrows can ignore depth. OFF uses Minecraft 26.3's reversed depth comparison. Death figures and item models retain normal world occlusion; their markers/labels provide visibility through walls. No direct OpenGL calls are used; rendering uses Minecraft's pipeline abstraction.
-- **Kill View**, **Show Player Deaths**, **Show Mob Deaths**: detached display figures frozen in the default death pose. Labels include victim/entity, killer and cause; absent causes say **Unknown**. Figures do not tick, run AI, collide or enter the world entity list. At most 128 figures are built in a frame; additional records retain their location markers and labels.
-- **Item View**: full-bright floating, rotating default item models, quantity and actor labels. **Player Hologram Heads** adds a generic player-head icon. Historical skins, equipment, item metadata and entity variants are not reconstructed. Unknown UUIDs use a display-only default player profile; it is never stored as evidence.
-- **Enable Arrows**, **Arrow Color**, **Arrow Size**, **Arrow Speed**: arrows point from earlier to later block events. A moving arrowhead indicates direction; its speed is visual only. **Arrows Per Player** defaults ON; OFF connects visible block events across actors. Equal timestamps, approximate timestamps and identical positions are not connected. Hidden/out-of-range records are not rendered; links describe the visible subset, not a reconstructed walking path.
-- **Event Labels**, **Maximum Visible Events**: labels can be hidden (death labels remain). Enter a positive whole-number page size, default **10**. Each page holds a distinct chronological slice of the selected world's positioned records. Alpha controls ghost blocks/markers/labels/arrows; figure and item textures remain opaque. Alpha zero hides the entire view.
-
-Only already-loaded client chunks are used. The mod never forces server chunks to load. Records with missing coordinates are retained in the database but cannot be drawn. Full historical block states/orientations are not in standard lookup chat: blocks use their default state, not a claim of exact historical shape. Player/mob classification retains the chat ambiguities documented above. Overlapping actions at one location may visually overlap; they are evidence markers, not an authoritative historical terrain state.
-
-The binding is session-only and is invalidated on leaving/changing dimensions. New matching capture records become visible automatically. Real evidence is isolated from saved simulation fixtures; demo previews use a separate temporary scene.
-
-## Replay (Phase 4)
-
-1. Open `/coreviewer replay` or **Replay** in the dashboard while in the correct dimension.
-2. Select the CoreProtect world, then **Load world**. This explicitly binds it to your current dimension. Only positioned records from that server/world are loaded; saved simulation fixtures are excluded.
-3. **Load demo** creates seven temporary actions near you toward +Z, without writing evidence or changing world blocks/entities.
-4. **Play in world** closes the panel and starts playback. The HUD shows state, UTC timeline time, percentage, speed and controls. Playback begins one second before the earliest action and finishes four seconds after the latest action, allowing the slowest block animation to finish.
-5. **Previous / Next** jump to the previous/next distinct timestamp and pause. Equal-time actions appear together. Drag the timeline slider to seek; **View paused** closes the panel without resuming. **Restart** returns to the beginning paused. **Stop** releases the snapshot and hides the view.
-6. Configure **Play / Pause**, **Forward** and **Backward** under Mod Menu > Configure > **REPLAY**. Defaults: **Right Shift** (play/pause), **comma** (forward), **period** (backward). Keys work only with a loaded replay, focused window and no open screen. Opening menus/chat or losing focus pauses playback; resume explicitly. Active keyboard shortcuts take priority over vanilla actions. They are ignored while typing or using menus. Coreviewer's saved configuration is authoritative at startup and when settings are saved; vanilla Controls changes are temporary until then.
-
-**Timeline Speed**, **Block Break Speed** and **Block Place Speed** each support **0.25x, 0.5x, 1x, 2x, 4x**. Timeline Speed scales historical time. **Smart Timeline**, ON by default, skips gaps longer than 10 seconds after allowing the preceding block animation to finish. Turn it OFF to preserve all historical gaps; Next/scrubbing also skip idle periods. Seeking still uses the original historical timestamps. Block speeds control a one-second animation in timeline time, so timeline and block speed multiply. Place models grow into view; break models shrink away. Outline mode also draws an animated inner cube. Only the most recent **Maximum Visible Events** actions remain in the replay overlay (default **20**, positive whole-number input). When action 21 is reached, action 1 leaves a 20-action window; rewinding restores the corresponding earlier window. Frozen death figures and floating items appear at their timestamps. Item rotation, floating motion and arrows freeze with the timeline.
-
-Replay reconstructs **actions**, not real movement or historical terrain. The world remains unchanged under the overlay. Actions at the same position may overlap; no walking paths, skins, exact block states or missing metadata are invented. `~` before the HUD time means the snapshot contains approximate chat timestamps: their ordering is an estimate, and these actions do not get chronological arrow links. Tied timestamps do not establish an order.
-
-The timeline is an immutable snapshot; load again to include new capture. Radius, loaded-chunk checks, category filters, opacity, through-wall settings and visible-event cap still apply. The panel's action count covers the whole timeline, not only nearby visible markers. Starting Static View, Clear/Reload, master OFF, disconnect or changing dimensions ends replay. Replay sends no server commands. Indexed snapshots and asynchronous scene selection are active in Phase 5.
-
-## Commands
-
-| Command | Behavior |
-| --- | --- |
-| `/coreviewer` | Open dashboard |
-| `/coreviewer config` | Open Cloth Config |
-| `/coreviewer lookup [parameters]` | Queue a lookup with automatic paging enabled; default `r:<Event Radius> t:1h` |
-| `/coreviewer stop` | Cancel capture and pending commands |
-| `/coreviewer status` | Show capture and storage status |
-| `/coreviewer simulate` | Append six labeled demo events |
-| `/coreviewer save` | Save JSON and CSV |
-| `/coreviewer reload` | Reload JSON; refuses to discard unsaved changes |
-| `/coreviewer clear` | Clear local history; respects Auto Save |
-| `/coreviewer static` | Choose a server world, show/hide static history, or preview temporary demo events |
-| `/coreviewer replay` | Open the replay timeline and playback controls |
-
-## Configuration and local files
-
-All mod text is in English. GENERAL contains the master switch and radius. CAPTURE contains Auto Capture, Auto Page Advance (default OFF) and delay. CSV contains Auto Save and Backup. STATIC VIEW controls also apply to replay. REPLAY contains the three speeds and configurable playback keys.
-
-With the master switch OFF, callbacks return without capture or scheduling, queued capture generations are invalidated, and no overlays run. Settings remain available and saved. Existing memory, registered callbacks and an already-started atomic disk write may remain/finish; a loaded mod cannot literally consume zero resources. The background worker expires after one idle second.
-
-Files live under `<game directory>/coreviewer/`, normally `.minecraft/coreviewer/`:
+Default **Teleport Command**:
 
 ```text
-config.json
-events.json
-events.csv
-config.json.bak
-events.json.bak
-events.csv.bak
+/co teleport #{world} {x} {y} {z}
 ```
 
-Phase 1 JSON schema version 1 remains compatible. JSON is authoritative; CSV is an export, not an import format. CSV uses UTF-8, quoted/escaped fields and ISO UTC timestamps. Unknown values are null in JSON and empty CSV fields. Each file uses temporary-file replacement. Reload validates JSON before regenerating CSV, recovering from an interrupted two-file update. Malformed JSON or orphan CSV is preserved and reported instead of silently erased.
+`{world}` is the exact CoreProtect world name, such as `world`, `world_nether` or `world_the_end`; `{x}`, `{y}`, `{z}` are the recorded integer coordinates. The `#` belongs to the default command template. Separate arguments with spaces. A server-specific example is `/tp {world} {x} {y} {z}` **only if that server's teleport command supports a world argument**. Vanilla `/tp @s {x} {y} {z}` works within the current dimension. Unresolved placeholders or multiline templates are rejected. A dimension change shortly after a Coreviewer teleport preserves the view; disconnects and unrelated world changes end it.
 
-**Auto Save OFF:** explicit Save is required; unsaved data does not survive exit. **Backup ON:** retains the previous saved snapshot, not an unlimited history. Clear updates files when Auto Save is ON. Data is local and includes server addresses, player names and historical actions.
+## Static view
 
-## Build and verification
+Open `/coreviewer static` (**G**). Select a CoreProtect world and **Show selected world** to bind its records to the current client dimension. Check that the dimension matches: server world names cannot reliably be inferred from client dimension IDs. Each view is a snapshot of the selected CSVs for the current server and chosen world. Load again after adding captures or changing files.
 
-For GitHub, upload the source project to the repository root. The [Build Coreviewer workflow](.github/workflows/build.yml) uses Java 25, runs the Gradle build and unit tests on pushes and pull requests, and uploads the client JAR as a workflow artifact. The [release notes](GITHUB_RELEASE.md) describe the 0.6.1 download and dependencies. Attach only the regular client JAR to a GitHub Release; GitHub generates source archives from the tag.
+- **V/B**: previous/next chronological page. Default **Maximum Visible Events: 10**. Page progress is centered above health, yellow for 10 seconds by default; color, duration and visibility are configurable.
+- **Block View**: transparent default block models, outlines, colors, opacity and optional texture tint.
+- **Kill View**: player deaths use a custom stone memorial with the victim's head and two vanilla flowers; mob deaths retain frozen display figures. Victim/killer/cause labels remain available. Missing causes stay unknown.
+- **Item View**: floating item models and quantities; optional generic player-head holograms.
+- **Container View**: chest-style inventory slots with green added/red removed backgrounds, item models, quantities and actor names.
+- **Session View**: frozen player holograms using available current skins and green/red login/logout borders.
+- **Arrows**: chronological links across visible supported event categories, per player by default. Configure color, size and animation speed. Equal or approximate timestamps do not establish a definite order and are not linked.
 
-Set `JAVA_HOME` to JDK 25:
+**Show Server Time** defaults ON in STATIC VIEW and also applies to replay. Labels show the recorded event time normalized to UTC, `~` for approximate chat times, or Unknown when unavailable. It can be switched off independently of ordinary event labels.
+
+Category toggles also apply to replay. Through-wall mode applies to block overlays, labels, markers and arrows; inventory-slot backgrounds and vanilla item/entity models retain world occlusion. Session skins and grave portraits use available server profiles or vanilla asynchronous UUID/name lookup; failed lookups use a default skin. These are current skins, not historical skins. Orientations, item metadata and movement are not reconstructed. Missing coordinates or timestamps cannot produce a chronological world marker. Type toggles, loaded chunks and rendering radius may reduce the visible subset of a page without replacing it with later actions.
+
+## Replay
+
+Open `/coreviewer replay` (**H**), choose a world and **Load world**. **Play in world** starts playback; opening a menu or losing focus pauses it. Replay uses original event timestamps and never edits real terrain or entities.
+
+| Default key | Action |
+| --- | --- |
+| Right Shift | Play / pause |
+| Comma | Forward to next timestamp |
+| Period | Backward to previous timestamp |
+| J | Start / load selected world |
+| K | Restart paused |
+| L | Stop and hide |
+| H | Replay menu |
+
+All keys are configurable. They apply only in the world, without an open menu; active shortcuts take priority over vanilla bindings. A slider supports seeking, and equal-time actions appear together.
+
+**Maximum Visible Events** defaults to **10** (blank/reset also use 10; existing saved limits are preserved). The rolling window removes the oldest action when a new one exceeds the limit; rewind restores the corresponding earlier window. Progress shows reached/total and window size above health, separately from static progress. It hides at completion/stop or after the configurable pause timeout (default 10 seconds). Color and visibility are configurable.
+
+**Smart Timeline** defaults ON. The **Smart Timeline (seconds)** text field is near the top of REPLAY settings, with an adjacent **ON/OFF** button. It defaults to **2** seconds and accepts nonnegative numbers, including decimals; clearing the field restores 2. Existing saved values are preserved until edited or reset. Long idle gaps are compressed after the configured wait and completion of the preceding block animation. Timeline Speed scales this wait along with historical time. Zero skips idle gaps as soon as animations allow. Disable Smart Timeline to preserve idle time. Block Break Speed, Block Place Speed and Timeline Speed support 0.25×, 0.5×, 1×, 2× and 4×.
+
+Replay reconstructs logged actions, not walking paths or an authoritative historical world. Approximate timestamps are marked `~`. Optional Follow Events with Teleport is the only replay navigation feature that sends a server command.
+
+## Statistics
+
+Open **Settings → STATISTICS → Open Statistics**, or **Statistics** on the dashboard. Statistics use all selected CSVs, independently of the view's radius and world binding.
+
+The category dropdown contains **All**, **Blocks**, **Items**, **Containers**, **Kills**, **Sessions**. The bordered table uses soft green for additions/placements/logins and soft red for removals/breaks/logouts. **Compact** defaults ON: opposing actions for the same material and category share one column, with green additions / red removals (for example, `10 / 5`). Different categories are never merged into one unit. Turn Compact OFF for separate action columns. **Show details** hides or shows header names while preserving icons and tooltips. Both preferences are saved. Horizontal arrows browse columns while the player column stays fixed. The magnifier **Item** search filters matching material/action columns; **Player** search jumps to the first matching player row (exact names have priority). **↑ Previous / ↓ Next** page through players.
+
+Rows default to player A–Z. Each column arrow cycles highest count first → lowest first → player A–Z. **Sort: ADDED / REMOVED / TOTAL** chooses which number to rank in compact columns. Alphabetical ties are deterministic. **Reset filters** clears searches, category and sorting; sorting is not saved when the statistics screen is closed.
+
+Click a player head or name to inspect their categories, then click a material icon in the personal table to open individual events with quantities, UTC times, worlds and exact recorded coordinates. The evidence screen reads the same snapshot as the table, runs scans off-thread and retains only its current page (at most 20 records); missing coordinates remain unavailable. Use Back and All players to return. Heads use currently available player profiles; offline/unknown profiles use a generic head.
+
+The **TOTAL** row sums every player in the current category/filter, not just the visible page. Block, kill and session columns count events. Item/container columns sum known quantities, keeping additions and removals separate. Unknown quantities are excluded from numeric sums and reported separately. The footer reports event count; All does not combine incompatible units into one misleading number.
+
+## Supported evidence and limits
+
+CoreTrace CSV import supports schema 2 block break/place, item pickup/drop, container add/remove, kills, sessions, and available ender-chest/projectile item records. Inventory, chat, command, username, sign and unsupported actions are skipped and counted. CSV parsing supports UTF-8 BOM, optional `sep=,`, quoted commas/newlines and reordered header columns. Legacy Coreviewer CSVs are supported too.
+
+English chat supports broke/placed, killed, added/removed (container), picked up/dropped/withdrew/deposited/threw/shot, and logged in/out. Coordinates come from visible `(x…/y…/z…/world)` lines. Hover timestamps are preferred; relative chat ages are marked approximate. CSV timestamps must contain a timezone or ISO offset; unavailable/invalid times remain unknown and are excluded from timelines but retained for statistics. Missing UUIDs, causes, coordinates and quantities are never fabricated. Quantity zero internally means unknown and exports as blank.
+
+Plain-text mob/player names can be ambiguous. Entity registry matches are treated as mobs; unknown unnamespaced names as players. This cannot prove whether a player named `zombie` is a mob. Demo data is labeled and excluded from real world timelines; do not select simulated CSVs for evidentiary statistics.
+
+## Files and commands
+
+```text
+coreviewer/
+  config.json
+  config.json.bak
+  simple-csv.json              # active Simple Mode file, when used
+  csv-library.json
+  csv/                         # shared imports, including nested folders
+    <capture folder>/events.csv # automatically saved capture
+  csv-archive/                 # files archived when Simple Mode is enabled
+```
+
+`/coreviewer` opens the dashboard. Additional commands: `config`, `lookup [parameters]`, `stop` (capture), `status`, `static`, `replay`, `simulate`, `save` (automatic-saving status), `reload` (CSV library), and `clear` (delete active library CSVs). `/coreviewer clear` executes immediately; the library screen offers confirmation dialogs. No command deletes external source exports or the archive.
+
+Master OFF stops capture, command scheduling and overlays while preserving settings. Already-started disk operations may finish; registered callbacks and existing data still occupy memory.
+
+## Development and validation
+
+Build with JDK 25 and the included Gradle 9.6 wrapper / Fabric Loom 1.17:
 
 ```powershell
 .\gradlew.bat build
-.\gradlew.bat runClient
 .\gradlew.bat runClientGameTest
+.\gradlew.bat runClient
 ```
 
-Linux/macOS: use `sh gradlew`. Gradle wrapper 9.6.0 and Fabric Loom 1.17 are included/configured. Release artifacts are in `build/libs`; install the regular jar, not the sources jar.
+For a focused client scenario, use `./gradlew runClientGameTest "-PcoreviewerTestClass=dev.coreviewer.LibraryGameTest"`. Omit that property to run all seven scenarios.
 
-Unit tests exercise storage, configuration, all six event types, hover timestamps, unknown fields, passive mode, delays, final/repeated pages, timeouts, error responses and master/Auto Capture gates. The isolated Minecraft client test opens the UI and Cloth Config, toggles the master switch, saves/reloads data, and injects CoreProtect-shaped system-message components through Fabric's real receive event to verify capture and hover metadata. Phase 3 also creates an isolated flat world and exercises ghost/outline rendering, death and item models, a wall occlusion comparison, world selection and master OFF. These are simulated integration tests, **not a live CoreProtect server compatibility test**.
+Linux/macOS: `sh gradlew build`. Install the regular JAR in `build/libs`, not `-sources.jar`. The GitHub Actions workflow builds/tests source pushes and provides an artifact. See [release notes](GITHUB_RELEASE.md).
 
-Source folders: `replay/` (deterministic timeline, input and HUD), `view/` (session binding, selection, rendering), `capture/` (state machine, immutable chat snapshots, parser), `config/`, `model/`, `storage/`, `ui/`; entrypoint `CoreTraceClient` and background `InvestigationService`. Test code is excluded from the release jar. `examples/` contains Phase 1 simulated fixtures. The previous prototype is preserved under `archive/` and excluded from this build.
+Parsing, disk writes, statistics aggregation and index construction run off the Minecraft thread. Scene selection uses immutable indexes and a bounded background queue; only loaded chunks are considered. Model caches and figure limits bound rendering work. CSV parsing reuses up to eight unchanged files / 200,000 cached events; selected history itself is not silently truncated. Large user-selected display limits still cost rendering time.
 
-Version 0.6.1 passed **40 unit tests and all five isolated Minecraft client scenarios**. The migration test verifies that copied CoreTrace files become independent and are not overwritten by a later copy. The client scenario verifies keyboard shortcuts, static pages, rolling replay windows, blank numeric defaults, sound search/preview/selection, and two completed captures with automatic reset and replacement. Screenshots: [static page](docs/custom-static-page.png), [replay window](docs/custom-replay-window.png), [sound picker](docs/sound-picker.png), [completion messages](docs/capture-completion.png). Phase 5 verifies the command tree/dashboard, selection/model cache reuse, resource-pack reload and cache cleanup. Phase 4 adds snapshot isolation, tied timestamps, stepping, seeking, independent speeds, pause/end/restart and master OFF checks. Its client test loads a demo through the UI, uses keyboard controls, checks rendering and verifies that saved evidence is unchanged. Phase 5 screenshots: [dashboard](docs/coreviewer-dashboard.png), [scene after resource reload](docs/coreviewer-reloaded-scene.png). Replay screenshots: [controls](docs/replay-controls.png), [first action](docs/replay-first-action.png), [completed actions](docs/replay-completed.png). Static screenshots: [static demo](docs/static-view.png), [through walls ON](docs/through-wall.png), [through walls OFF](docs/depth-tested.png). These are simulated tests, not a live CoreProtect server compatibility test.
+Tests cover configuration, capture scheduling, CSV compatibility with the supplied CoreTrace 1.4.1 fixture, escaping, unknown metadata, selection persistence, chronology, Simple Mode, statistics, replay and spatial indexing. Isolated Minecraft client scenarios exercise configuration, capture, rendering, replay controls, library selection, statistics, container/session models, radius filtering and a permitted teleport. These are local simulated tests, not validation against a live CoreProtect server.
 
-## Phase 5: performance and compatibility
+Version 0.9.0 verification: **62 unit tests and all seven isolated Minecraft client scenarios passed**. Includes regression coverage for sorting paired counts, material/player searches, bounded evidence pages, empty-folder cleanup, current-skin holograms, memorial rendering and server timestamps. Live CoreProtect-server validation remains separate from local simulated tests.
 
-- Event lists, per-server/world/simulation timelines and chunk buckets are built on the serialized storage worker and published together as an immutable snapshot. Parsing and disk writes stay off the client thread.
-- Rendering selects the chronological page or replay window first, then filters its actions by radius, event-type toggles and loaded chunks. Off-screen/unloaded records do not get replaced with actions from a different page. The spatial index also retains a bounded-nearest selection path for reference/diagnostics. No server chunk tickets or forced loading are used.
-- Dense-history selection runs on a separate lazy daemon worker. The client snapshots chunk availability only; Minecraft world objects never cross to the worker. The queue keeps at most one pending selection, replacing obsolete queued requests. Results are reused; refresh requests are issued about every 200 ms, or sooner after scope, replay, filter or significant camera changes. Render-time checks immediately exclude unloaded/out-of-radius records. New nearby results appear after asynchronous selection finishes; dense histories can take longer.
-- Hide, master OFF, world changes and disconnect release caches and cancel pending selection. Idle selection/storage workers expire after one second. Index memory remains proportional to stored history; saved history is not silently truncated.
-- Block geometry and default item render states use separate 256-entry LRU caches. Resource-model reloads invalidate both; world changes clear them. Existing death figures remain limited to 128, with the user-selected page/window size controlling event markers. Rendering remains on Minecraft's rendering thread and is bounded by these display limits.
-- Replay takes a pre-sorted timeline from its immutable index snapshot. Binary-search bounds and list slices replace repeated full-history scans/copies for seeking and visible actions. New capture never changes an already-loaded replay.
-- Configuration copies no longer serialize/parse JSON during rendering. JSON persistence and schema 1 remain unchanged.
-
-The sparse-history regression uses **100,001 events** and verifies that its local query examines **one event in one chunk**. Dense areas still cost work on the selection worker; this is an algorithmic check, not an FPS benchmark or a guarantee for arbitrary hardware.
-
-
-
-References: [CoreProtect commands](https://docs.coreprotect.net/commands/), [CoreProtect lookup implementation](https://github.com/PlayPro/CoreProtect/blob/master/src/main/java/net/coreprotect/command/lookup/StandardLookupThread.java), [CoreProtect chat formatting](https://github.com/PlayPro/CoreProtect/blob/master/src/main/java/net/coreprotect/utility/ChatUtils.java), [CoreProtect API](https://docs.coreprotect.net/api/).
-
-
+Screenshots: [direct settings](docs/direct-settings.png), [player memorial](docs/player-memorial.png), [container slot](docs/container-slot.png), [search and sorting](docs/statistics-search-sort.png), [individual evidence](docs/statistics-evidence.png), [category dropdown](docs/statistics-dropdown.png), [Smart Timeline input](docs/smart-timeline.png), [icon-only statistics](docs/statistics-icons-only.png), [CSV library](docs/csv-library.png), [statistics](docs/statistics-all.png), [player statistics](docs/statistics-player.png), [containers and sessions](docs/container-sessions.png).

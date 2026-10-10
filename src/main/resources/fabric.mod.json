@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "Coreviewer investigator",
   "icon": "assets/coreviewer/icon.png",
-  "description": "CoreProtect chat capture, indexed historical investigation and event replay with bounded caches and loaded-chunk rendering.",
+  "description": "CoreProtect chat and CSV investigations with chronological replay, container/session views, event navigation and per-player statistics.",
   "environment": "client",
   "accessWidener": "coreviewer.accesswidener",
   "license": "MIT",

@@ -59,6 +59,7 @@ public final class CoreTraceClient implements ClientModInitializer {
         service = new InvestigationService(directory, config);
         Set<String> entities = new HashSet<>();
         BuiltInRegistries.ENTITY_TYPE.keySet().forEach(id -> entities.add(id.toString()));
+        service.entityNames(entities);
         capture =
                 new CaptureEngine(
                         service::config,
@@ -95,10 +96,7 @@ public final class CoreTraceClient implements ClientModInitializer {
                                                         if (original.captureSounds)
                                                             SoundPickerScreen.play(
                                                                     original.captureEndSound);
-                                                        if (automatic
-                                                                && original.clearPreviousCapture
-                                                                && original.clearCaptureMessage)
-                                                            tell(message);
+                                                        if (automatic) tell(message);
                                                         if (automatic
                                                                 && original.resetCaptureOnComplete) {
                                                             var c = service.config();
@@ -156,7 +154,7 @@ public final class CoreTraceClient implements ClientModInitializer {
                     if (mc.level != lastLevel) {
                         stopCapture("World changed.");
                         lastLevel = mc.level;
-                        StaticView.hide();
+                        if (!StaticView.followTeleport()) StaticView.hide();
                     }
                     capture.tick(System.currentTimeMillis());
                 });

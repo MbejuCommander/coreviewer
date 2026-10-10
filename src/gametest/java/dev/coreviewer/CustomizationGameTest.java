@@ -126,7 +126,7 @@ public final class CustomizationGameTest implements FabricClientGameTest {
                                     "L must stop replay without opening advancements");
                     });
             // Validate empty numeric entries and picker integration against real Cloth entries.
-            context.setScreen(() -> CoreTraceConfigScreen.create(null));
+            context.setScreen(() -> CoreTraceConfigScreen.createEditor(null, null));
             context.runOnClient(
                     mc -> {
                         var screen =
@@ -152,23 +152,63 @@ public final class CustomizationGameTest implements FabricClientGameTest {
                                 || CoreTraceClient.service.config().commandDelayMs != 1500)
                             throw new AssertionError("Blank number defaults failed");
                     });
-            context.getInput().setCursorPos(200,106);
+            context.getInput().setCursorPos(200, 106);
             context.getInput().pressMouse(InputConstants.MOUSE_BUTTON_LEFT);
             context.waitTicks(3);
             context.takeScreenshot("custom-capture-settings");
-            context.getInput().setCursorPos(300,175);
+            context.getInput().setCursorPos(300, 175);
             context.getInput().pressMouse(InputConstants.MOUSE_BUTTON_LEFT);
             context.getInput().typeChars("Capture Start Sound");
             context.waitTicks(3);
-            double[] browse=context.computeOnClient(mc->{
-                var screen=(me.shedaniel.clothconfig2.gui.AbstractConfigScreen)mc.gui.screen();
-                var entry=screen.getCategorizedEntries().values().stream().flatMap(List::stream).filter(e->e.getFieldName().getString().equals("Capture Start Sound")).findFirst().orElseThrow();
-                var button=entry.children().stream().filter(child->child instanceof net.minecraft.client.gui.components.Button b && b.getMessage().getString().equals("Search sounds / Preview"))
-                    .map(child->(net.minecraft.client.gui.components.Button)child).findFirst().orElseThrow();
-                return new double[]{2*(button.getX()+button.getWidth()/2.0),2*(button.getY()+button.getHeight()/2.0)};
-            });
+            double[] browse =
+                    context.computeOnClient(
+                            mc -> {
+                                var screen =
+                                        (me.shedaniel.clothconfig2.gui.AbstractConfigScreen)
+                                                mc.gui.screen();
+                                var entry =
+                                        screen.getCategorizedEntries().values().stream()
+                                                .flatMap(List::stream)
+                                                .filter(
+                                                        e ->
+                                                                e.getFieldName()
+                                                                        .getString()
+                                                                        .equals(
+                                                                                "Capture Start"
+                                                                                        + " Sound"))
+                                                .findFirst()
+                                                .orElseThrow();
+                                var button =
+                                        entry.children().stream()
+                                                .filter(
+                                                        child ->
+                                                                child
+                                                                                instanceof
+                                                                                net.minecraft.client
+                                                                                                .gui
+                                                                                                .components
+                                                                                                .Button
+                                                                                        b
+                                                                        && b.getMessage()
+                                                                                .getString()
+                                                                                .equals(
+                                                                                        "Search"
+                                                                                            + " sounds"
+                                                                                            + " / Preview"))
+                                                .map(
+                                                        child ->
+                                                                (net.minecraft.client.gui.components
+                                                                                .Button)
+                                                                        child)
+                                                .findFirst()
+                                                .orElseThrow();
+                                return new double[] {
+                                    2 * (button.getX() + button.getWidth() / 2.0),
+                                    2 * (button.getY() + button.getHeight() / 2.0)
+                                };
+                            });
             context.takeScreenshot("custom-sound-setting-entry");
-            context.getInput().setCursorPos(browse[0],browse[1]);
+            context.getInput().setCursorPos(browse[0], browse[1]);
             context.getInput().pressMouse(InputConstants.MOUSE_BUTTON_LEFT);
             context.waitTicks(2);
             context.runOnClient(
@@ -191,7 +231,7 @@ public final class CustomizationGameTest implements FabricClientGameTest {
                 var cfg = CoreTraceClient.service.config();
                 cfg.autoCapture = true;
                 cfg.autoPageAdvance = true;
-                cfg.clearPreviousCapture = true;
+                cfg.simpleMode = true;
                 cfg.resetCaptureOnComplete = true;
                 CoreTraceClient.service.configure(cfg).join();
                 final String material = n == 0 ? "stone" : "gold_block";

@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.9.0 — 2026-10-09 — Evidence navigation and player memorials
+
+- Removed the intermediate settings dashboard; Configure opens Cloth Config directly.
+- Added current player-skin lookup for session holograms and victim portraits in a custom stone memorial with vanilla flowers. Missing skins retain a default appearance.
+- Replaced white container cards with chest-style inventory slots and colored add/remove backgrounds.
+- Added optional server-time labels (UTC), enabled by default in static view and replay.
+- CSV deletion now prunes empty parent folders, preserving the library root and folders with other contents.
+- Changed the new/blank/reset replay visible-event limit to 10; existing saved limits remain intact.
+- Added statistics item/player searches, fixed player column, vertical page arrows, per-column three-state sorting, compact count ranking and category dropdown with Reset filters.
+- Added per-player/material evidence pages with quantities, timestamps, worlds and coordinates; background preparation and bounded displayed rows.
+- Verified 62 unit tests and all seven isolated client scenarios, including 50-player statistics navigation and Improved Transparency rendering.
+
+
+## 0.8.0 — 2026-10-08 — Library organization and interface refinement
+
+- Fixed Open CSV Folder using an asynchronous native file-manager launch.
+- Added recursive CSV discovery and capture subfolders with configurable names, unique generated defaults and collision suffixes. Simple Mode remembers its active nested file across restarts.
+- Replaced Smart Timeline with a numeric text input and adjacent ON/OFF switch; blank/reset default is now 2 seconds.
+- Added an animated settings dashboard, smoother navigation and a reduced-motion preference.
+- Rebuilt statistics as a bordered table with soft action colors, persistent Show details and Compact controls, paired green/red counts and totals.
+- Fixed the ghost-block crash with Minecraft Improved Transparency by supplying OIT pipelines for both through-wall and depth-tested rendering.
+- Expanded regression and in-game coverage; updated documentation and screenshots. Verification: 59 unit tests and six client scenarios passed; native CSV-folder launch confirmed in Windows Explorer.
+
+## 0.7.0 — 2026-10-08 — CSV investigations and statistics
+
+- Added shared import/export CSV library compatible with CoreTrace 1.4.1+26.3: selection, ordering, individual/all deletion and persistent manifests.
+- Combined selected events chronologically across files; added legacy JSON migration and automatic capture CSV saving.
+- Replaced Auto Save/Backup/Replace Previous Capture controls with optional Simple Mode, including a warning and archival of existing files on activation.
+- Added optional event teleport navigation, configurable command placeholders and optional radius filtering at view load.
+- Added container item bubbles and login/logout holograms with category toggles and chronological arrows.
+- Added category and per-player statistics with item icons, player heads, quantities, event counts and totals.
+- Made Smart Timeline gap configurable (default 3 seconds).
+- Kept parsing, aggregation and indexing off the game thread; bounded unchanged-file CSV cache.
+- Updated README, compatibility fixtures and unit/client integration coverage. Verification: 51 unit tests, six client scenarios and a final focused library/rendering run passed.
+
 ## 0.6.1 — 2026-09-28 — Separate identity for coexistence
 
 - Changed Coreviewer's Fabric mod ID to `coreviewer` and separated its Java package, resource namespace, key names, mixin metadata and local data folder from CoreTrace.

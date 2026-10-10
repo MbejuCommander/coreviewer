@@ -18,6 +18,8 @@ public final class StaticView {
     private static int page;
     private static long pageShown;
     private static EventIndex pageIndex;
+    private static EventIndex preparedIndex = EventIndex.EMPTY;
+    private static long preparation;
 
     public static int total() {
         return sourceIndex().timeline(server, world, isDemo()).events().size();
@@ -58,7 +60,21 @@ public final class StaticView {
                 && level != null;
     }
 
+    public static boolean followTeleport() {
+        var mc = Minecraft.getInstance();
+        if (!enabled
+                || mc.level == null
+                || mc.getConnection() != connection
+                || !EventNavigation.consumeWorldChange(connection)) return false;
+        level = mc.level;
+        StaticRenderer.reset();
+        return true;
+    }
+
     public static void hide() {
+        preparation++;
+        preparedIndex = EventIndex.EMPTY;
+        EventNavigation.reset();
         ReplayController.stop();
         StaticRenderer.reset();
         enabled = false;
@@ -90,7 +106,7 @@ public final class StaticView {
     }
 
     public static EventIndex sourceIndex() {
-        return isDemo() ? demoIndex : CoreTraceClient.service.snapshot().index();
+        return isDemo() ? demoIndex : preparedIndex;
     }
 
     public static EventIndex index() {
@@ -102,6 +118,10 @@ public final class StaticView {
     }
 
     public static String show(String selectedWorld) {
+        return show(selectedWorld, () -> {});
+    }
+
+    public static String show(String selectedWorld, Runnable ready) {
         var mc = Minecraft.getInstance();
         if (!CoreTraceClient.service.enabled()) return "Enable Coreviewer first.";
         if (mc.level == null) return "Join a world first.";
@@ -110,10 +130,63 @@ public final class StaticView {
         demo = List.of();
         demoIndex = EventIndex.EMPTY;
         bind(selectedWorld);
-        return status = "Showing " + world + " in " + mc.level.dimension().identifier();
+        preparedIndex = EventIndex.EMPTY;
+        long token = ++preparation;
+        var events = CoreTraceClient.service.events();
+        var config = CoreTraceClient.service.config();
+        var origin = mc.player.position();
+        String selectedServer = server;
+        java.util.concurrent.CompletableFuture.supplyAsync(
+                        () ->
+                                new EventIndex(
+                                        events.stream()
+                                                .filter(
+                                                        e ->
+                                                                e.context()
+                                                                                .server()
+                                                                                .equals(
+                                                                                        selectedServer)
+                                                                        && e.context()
+                                                                                .world()
+                                                                                .equals(
+                                                                                        selectedWorld))
+                                                .filter(
+                                                        e ->
+                                                                !config.respectRadius
+                                                                        || within(
+                                                                                e,
+                                                                                origin.x,
+                                                                                origin.y,
+                                                                                origin.z,
+                                                                                config.eventRadius))
+                                                .toList()))
+                .thenAccept(
+                        index ->
+                                mc.execute(
+                                        () -> {
+                                            if (token != preparation || !active()) return;
+                                            preparedIndex = index;
+                                            pageShown = System.nanoTime();
+                                            status =
+                                                    "Showing "
+                                                            + selectedWorld
+                                                            + (config.respectRadius
+                                                                    ? " within the loaded radius."
+                                                                    : " in chronological order.");
+                                            ready.run();
+                                        }));
+        return status = "Preparing selected events…";
+    }
+
+    public static boolean within(CoreTraceEvent e, double x, double y, double z, int radius) {
+        var p = e.context().position();
+        if (p == null) return false;
+        double dx = p.x() + .5 - x, dy = p.y() + .5 - y, dz = p.z() + .5 - z;
+        return dx * dx + dy * dy + dz * dz <= (double) radius * radius;
     }
 
     private static void bind(String selectedWorld) {
+        EventNavigation.reset();
         ReplayController.stop();
         page = 0;
         pageIndex = null;

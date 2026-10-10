@@ -9,6 +9,6 @@ public record ItemEvent(EventContext context, EventType type, String item, int q
         Objects.requireNonNull(item);
         if (type != EventType.ITEM_ADD && type != EventType.ITEM_REMOVE)
             throw new IllegalArgumentException("Not an item action");
-        if (quantity < 1) throw new IllegalArgumentException("Quantity must be positive");
+        if (quantity < 0) throw new IllegalArgumentException("Negative quantity");
     }
 }

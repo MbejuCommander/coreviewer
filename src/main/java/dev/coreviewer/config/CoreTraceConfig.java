@@ -14,6 +14,12 @@ public final class CoreTraceConfig implements Cloneable {
     public int schemaVersion = 1;
     public boolean enabled = true;
     public int eventRadius = 100;
+    public boolean teleportToEvents = false, respectRadius = false;
+    public String teleportCommand = "/co teleport #{world} {x} {y} {z}";
+    public boolean simpleMode = false, containerView = true, sessionView = true;
+    public double smartTimelineSeconds = 2;
+    public String captureFolderName = "";
+    public boolean statisticsCompact = true, statisticsDetails = true, menuAnimations = true;
     public boolean autoCapture = true, autoPageAdvance = false;
     public int commandDelayMs = 1500;
     public boolean autoSave = true, backup = true;
@@ -39,7 +45,8 @@ public final class CoreTraceConfig implements Cloneable {
             replayHudColor = 0xFFFF55,
             staticHudSeconds = 10,
             replayHudSeconds = 10;
-    public int replayVisibleEvents = 20;
+    public int replayVisibleEvents = 10;
+    public boolean showServerTime = true;
     public String staticPreviousKey = "key.keyboard.v",
             staticNextKey = "key.keyboard.b",
             staticMenuKey = "key.keyboard.g";
@@ -49,14 +56,29 @@ public final class CoreTraceConfig implements Cloneable {
             replayMenuKey = "key.keyboard.h";
     public transient int windowFrom = -1, windowTo = Integer.MAX_VALUE;
 
+    public static double parseSmartTimeline(String input) {
+        double value = input.isBlank() ? 2 : Double.parseDouble(input.strip());
+        if (!Double.isFinite(value) || value < 0)
+            throw new IllegalArgumentException("Enter seconds >= 0, or leave blank for 2.");
+        return value;
+    }
+
     public void validate() {
+        if (captureFolderName == null) captureFolderName = "";
+        captureFolderName = dev.coreviewer.storage.CaptureFolders.validate(captureFolderName);
+        if (!Double.isFinite(smartTimelineSeconds) || smartTimelineSeconds < 0)
+            smartTimelineSeconds = 2;
+        if (teleportCommand == null || teleportCommand.isBlank())
+            teleportCommand = "/co teleport #{world} {x} {y} {z}";
+        if (teleportCommand.contains("\n") || teleportCommand.contains("\r"))
+            throw new IllegalArgumentException("Teleport command must be a single line");
         if (schemaVersion != 1)
             throw new IllegalArgumentException("Unsupported config schema: " + schemaVersion);
         if (eventRadius < 1) eventRadius = 100;
         if (commandDelayMs < 1) commandDelayMs = 1500;
         alpha = Math.clamp(alpha, 0, 255);
         if (maxVisibleEvents < 1) maxVisibleEvents = 10;
-        if (replayVisibleEvents < 1) replayVisibleEvents = 20;
+        if (replayVisibleEvents < 1) replayVisibleEvents = 10;
         if (staticHudSeconds < 0) staticHudSeconds = 10;
         if (replayHudSeconds < 0) replayHudSeconds = 10;
         staticHudColor &= 0xFFFFFF;

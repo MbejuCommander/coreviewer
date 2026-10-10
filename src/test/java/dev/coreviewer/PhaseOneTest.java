@@ -19,7 +19,13 @@ class PhaseOneTest {
     void simulatedDataCoversAllSixActionsAndRoundTrips() throws Exception {
         var events = SimulatedEvents.create(1_800_000_000_000L);
         assertEquals(
-                Set.of(EventType.values()),
+                Set.of(
+                        EventType.BLOCK_BREAK,
+                        EventType.BLOCK_PLACE,
+                        EventType.PLAYER_KILL,
+                        EventType.MOB_KILL,
+                        EventType.ITEM_ADD,
+                        EventType.ITEM_REMOVE),
                 events.stream()
                         .map(CoreTraceEvent::type)
                         .collect(java.util.stream.Collectors.toSet()));
@@ -85,20 +91,20 @@ class PhaseOneTest {
     }
 
     @Test
-    void manualSaveSurvivesReloadAndMasterSwitch() throws Exception {
+    void automaticCsvSaveSurvivesReloadAndMasterSwitch() throws Exception {
         var c = new CoreTraceConfig();
         c.autoSave = false;
         try (var service = new InvestigationService(folder, c)) {
             service.initialize().join();
             service.simulate().join();
             assertEquals(6, service.events().size());
-            assertTrue(service.dirty());
-            assertTrue(
-                    EventCodec.parseJson(Files.readString(folder.resolve("events.json")))
-                            .isEmpty());
-            assertTrue(service.reload().join().contains("Unsaved"));
-            service.save().join();
             assertFalse(service.dirty());
+            assertEquals(1, service.csvFiles().size());
+            assertTrue(
+                    Files.exists(
+                            service.csvFolder().resolve(service.csvFiles().getFirst().name())));
+            service.reload().join();
+            assertEquals(6, service.events().size());
             c.enabled = false;
             service.configure(c).join();
             assertTrue(service.clear().join().contains("DISABLED"));
@@ -148,7 +154,7 @@ class PhaseOneTest {
         var c = SimulatedEvents.create(1_800_000_000_000L).getFirst().context();
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new ItemEvent(c, EventType.ITEM_ADD, "minecraft:stone", 0));
+                () -> new ItemEvent(c, EventType.ITEM_ADD, "minecraft:stone", -1));
         assertThrows(
                 IllegalArgumentException.class,
                 () -> new BlockEvent(c, EventType.PLAYER_KILL, "minecraft:stone"));

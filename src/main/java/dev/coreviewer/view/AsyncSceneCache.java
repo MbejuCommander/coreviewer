@@ -64,6 +64,8 @@ public final class AsyncSceneCache {
                                 config.blockView,
                                 config.killView,
                                 config.itemView,
+                                config.containerView,
+                                config.sessionView,
                                 config.playerDeaths,
                                 config.mobDeaths,
                                 config.windowFrom,

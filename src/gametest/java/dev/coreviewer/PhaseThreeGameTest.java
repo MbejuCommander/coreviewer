@@ -34,6 +34,25 @@ public final class PhaseThreeGameTest implements FabricClientGameTest {
                                     "Missing death/item models: " + StaticRenderer.error);
                     });
             context.takeScreenshot("phase3-models-and-arrows");
+            c.showServerTime = false;
+            CoreTraceClient.service.configure(c).join();
+            world.getServer().runCommand("tp @p 0 -60 1 0 15");
+            context.runOnClient(mc -> mc.options.improvedTransparency().set(true));
+            context.waitTicks(12);
+            context.takeScreenshot("player-memorial");
+            context.runOnClient(
+                    mc -> {
+                        var actual =
+                                PlayerAppearance.profile(
+                                        mc.player.getGameProfile().name(), mc.player.getUUID());
+                        if (!actual.partialProfile().id().equals(mc.player.getUUID()))
+                            throw new AssertionError("Available player profile not used");
+                        mc.options.improvedTransparency().set(false);
+                    });
+            world.getServer().runCommand("tp @p 0 -60 -8 0 12");
+            c.showServerTime = true;
+            CoreTraceClient.service.configure(c).join();
+            context.waitTicks(8);
             c.ghostBlocks = false;
             CoreTraceClient.service.configure(c).join();
             context.waitTicks(3);

@@ -39,14 +39,24 @@ public final class InvestigationScreen extends Screen {
                         () -> action(() -> CoreTraceClient.service.simulate()));
         save =
                 button(
-                        "Save CSV + JSON",
+                        "CSV Library",
                         left,
                         top + 68,
                         146,
-                        () -> action(() -> CoreTraceClient.service.save()));
+                        () -> {
+                            CoreTraceClient.service
+                                    .refreshCsv(CoreTraceClient.serverIdentity())
+                                    .thenAccept(
+                                            message ->
+                                                    minecraft.execute(
+                                                            () ->
+                                                                    minecraft.gui.setScreen(
+                                                                            new CsvLibraryScreen(
+                                                                                    this))));
+                        });
         reload =
                 button(
-                        "Reload JSON",
+                        "Reload CSVs",
                         left + 154,
                         top + 68,
                         146,
@@ -57,33 +67,17 @@ public final class InvestigationScreen extends Screen {
                         });
         clear =
                 button(
-                        "Clear local events",
+                        "Statistics",
                         left,
                         top + 94,
                         146,
-                        () -> {
-                            CoreTraceClient.stopCapture("History cleared.");
-                            dev.coreviewer.view.StaticView.hide();
-                            action(() -> CoreTraceClient.service.clear());
-                        });
+                        () -> minecraft.gui.setScreen(new StatisticsScreen(this)));
         button(
                 "Open data folder",
                 left + 154,
                 top + 94,
                 146,
-                () ->
-                        CompletableFuture.runAsync(
-                                () -> {
-                                    try {
-                                        java.awt.Desktop.getDesktop()
-                                                .open(CoreTraceClient.directory.toFile());
-                                    } catch (Exception ex) {
-                                        CoreTraceClient.tell(
-                                                "Data folder: "
-                                                        + CoreTraceClient.directory
-                                                        + " (could not open automatically)");
-                                    }
-                                }));
+                () -> FolderOpener.open(CoreTraceClient.directory));
         button(
                 "Capture",
                 left,
@@ -127,7 +121,7 @@ public final class InvestigationScreen extends Screen {
         super.extractRenderState(g, mx, my, dt);
         var s = CoreTraceClient.service;
         g.centeredText(font, title, width / 2, top, 0xFFFFFFFF);
-        g.centeredText(font, "PHASE 5 — INDEXED INVESTIGATION", width / 2, top + 16, 0xFFFFD166);
+        g.centeredText(font, "CSV INVESTIGATION LIBRARY", width / 2, top + 16, 0xFFFFD166);
         g.centeredText(
                 font,
                 s.enabled() ? "COREVIEWER ENABLED: ON" : "COREVIEWER ENABLED: OFF",

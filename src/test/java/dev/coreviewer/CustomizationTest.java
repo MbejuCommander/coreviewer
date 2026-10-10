@@ -60,7 +60,7 @@ class CustomizationTest {
         var c = new CoreTraceConfig();
         assertEquals(1500, c.commandDelayMs);
         assertEquals(10, c.maxVisibleEvents);
-        assertEquals(20, c.replayVisibleEvents);
+        assertEquals(10, c.replayVisibleEvents);
         c.eventRadius = 17;
         c.commandDelayMs = 2345;
         c.maxVisibleEvents = 3;
@@ -129,7 +129,7 @@ class CustomizationTest {
         e.play();
         e.advance(500, c);
         assertEquals(1500, e.cursor());
-        e.advance(501, c);
+        e.advance(2501, c);
         assertTrue(e.cursor() >= 10_801_000);
         c.smartTimeline = false;
         e.seek(1000);
@@ -165,31 +165,31 @@ class CustomizationTest {
     }
 
     @Test
-    void replacementCommitsAfterLastPagePreservesOtherServersAndCancelledData() throws Exception {
+    void separateCapturesPersistAndSimpleModeReplacesOneActiveFile() throws Exception {
         var c = new CoreTraceConfig();
         var pair = new PhaseTwoTest();
         try (var service = new InvestigationService(folder, c)) {
             service.initialize().join();
+            service.beginCapture(true, "s").join();
             service.capture(pair.pair("broke stone"), "s", Set.of()).join();
-            service.capture(pair.pair("placed dirt"), "other", Set.of()).join();
-            var original = service.events();
+            service.finishCapture().join();
+            service.beginCapture(true, "s").join();
+            service.capture(pair.pair("placed gold_block"), "s", Set.of()).join();
+            service.finishCapture().join();
+            assertEquals(2, service.csvFiles().size());
+            assertEquals(2, service.events().size());
+            c.simpleMode = true;
+            service.configure(c).join();
+            assertEquals(1, service.csvFiles().size());
+            assertEquals(2, service.events().size());
             service.beginCapture(true, "s").join();
             service.capture(pair.pair("placed diamond_block"), "s", Set.of()).join();
-            assertEquals(original, service.events());
-            service.cancelCapture();
-            service.beginCapture(true, "s").join();
-            assertEquals(original, service.events());
-            service.capture(pair.pair("placed gold_block"), "s", Set.of()).join();
-            String message = service.finishCapture().join();
-            assertTrue(message.contains("replaced 1"));
-            assertEquals(2, service.events().size());
-            assertTrue(
-                    service.events().stream().anyMatch(e -> e.context().server().equals("other")));
-            assertEquals("minecraft:gold_block", ((BlockEvent) service.events().getLast()).block());
+            service.finishCapture().join();
+            assertEquals(1, service.csvFiles().size());
+            assertEquals(1, service.events().size());
             assertEquals(
-                    2,
-                    dev.coreviewer.storage.EventCodec.parseJson(read(folder.resolve("events.json")))
-                            .size());
+                    "minecraft:diamond_block", ((BlockEvent) service.events().getFirst()).block());
+            assertTrue(Files.isDirectory(folder.resolve("csv-archive")));
         }
     }
 

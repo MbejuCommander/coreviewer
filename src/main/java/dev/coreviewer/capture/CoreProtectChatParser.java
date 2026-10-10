@@ -12,9 +12,9 @@ public final class CoreProtectChatParser {
     private static final Pattern ROW =
             Pattern.compile(
                     "^([0-9]+(?:[.,][0-9]+)?)/?([mhd]) ago [+-] (\\S+)"
-                            + " (broke|placed|killed|added|removed|picked"
-                            + " up|dropped|deposited|withdrew|threw|shot) (?:x([0-9]+)"
-                            + " )?([\\w:#.-]+?)(?:\\s*\\(↓\\))?\\.(?:\\s.*)?$");
+                        + " (broke|placed|killed|added|removed|picked"
+                        + " up|dropped|deposited|withdrew|threw|shot|logged in|logged out)(?:"
+                        + " (?:x([0-9]+) )?([\\w:#.-]+?)(?:\\s*\\(↓\\))?)?\\.(?:\\s.*)?$");
     private static final Pattern POS =
             Pattern.compile("\\(x(-?\\d+)/y(-?\\d+)/z(-?\\d+)/([^()]+)\\)");
     private static final DateTimeFormatter DATE =
@@ -45,7 +45,7 @@ public final class CoreProtectChatParser {
             var pos = POS.matcher(text);
             if (pending != null && pos.find()) {
                 try {
-                    events.add(event(pending, pos, server, entityNames));
+                    events.add(event(pending, pos, server, entityNames, text));
                 } catch (RuntimeException ex) {
                     skipped++;
                 }
@@ -63,6 +63,13 @@ public final class CoreProtectChatParser {
     }
 
     private CoreTraceEvent event(ChatLine row, Matcher pos, String server, Set<String> entities) {
+        return event(row, pos, server, entities, "");
+    }
+
+    private CoreTraceEvent event(
+            ChatLine row, Matcher pos, String server, Set<String> entities, String coordinateLine) {
+        if (coordinateLine.contains("(a:inventory)"))
+            throw new IllegalArgumentException("Inventory rows are not container events");
         var m = ROW.matcher(clean(row.text()));
         if (!m.matches()) throw new IllegalArgumentException();
         Long exact = null;
@@ -107,7 +114,13 @@ public final class CoreProtectChatParser {
                         false,
                         (exact == null ? "COREPROTECT_CHAT_APPROXIMATE" : "COREPROTECT_CHAT")
                                 + " | "
-                                + clean(row.text()));
+                                + clean(row.text())
+                                + (coordinateLine.isBlank() ? "" : " | " + coordinateLine));
+        if (verb.equals("logged in") || verb.equals("logged out"))
+            return new SessionEvent(
+                    context,
+                    verb.equals("logged in") ? EventType.SESSION_LOGIN : EventType.SESSION_LOGOUT);
+        if (material == null) throw new IllegalArgumentException("Missing material");
         String identifier = material.contains(":") ? material : "minecraft:" + material;
         if (verb.equals("broke") || verb.equals("placed"))
             return new BlockEvent(
@@ -126,6 +139,15 @@ public final class CoreProtectChatParser {
                     null);
         }
         if (m.group(5) == null) throw new IllegalArgumentException("Missing quantity");
+        if (Integer.parseInt(m.group(5)) < 1)
+            throw new IllegalArgumentException("Invalid quantity");
+        if ((verb.equals("added") || verb.equals("removed"))
+                && !coordinateLine.contains("(a:item)"))
+            return new ContainerEvent(
+                    context,
+                    verb.equals("added") ? EventType.CONTAINER_ADD : EventType.CONTAINER_REMOVE,
+                    identifier,
+                    Integer.parseInt(m.group(5)));
         boolean add = Set.of("added", "picked up", "withdrew").contains(verb);
         return new ItemEvent(
                 context,

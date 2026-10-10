@@ -9,7 +9,9 @@
       "dev.coreviewer.PhaseThreeGameTest",
       "dev.coreviewer.PhaseFourGameTest",
       "dev.coreviewer.PhaseFiveGameTest",
-      "dev.coreviewer.CustomizationGameTest"
+      "dev.coreviewer.CustomizationGameTest",
+      "dev.coreviewer.LibraryGameTest",
+      "dev.coreviewer.StatisticsGameTest"
     ]
   }
 }

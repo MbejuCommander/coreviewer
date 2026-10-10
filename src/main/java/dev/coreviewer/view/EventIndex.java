@@ -29,7 +29,8 @@ public final class EventIndex {
             var e = events.get(i);
             var c = e.context();
             var p = c.position();
-            if (p == null || c.world().isBlank()) continue;
+            if (p == null || c.world().isBlank() || c.source().contains("UNKNOWN_TIMESTAMP"))
+                continue;
             var scope = new Scope(c.server(), c.world(), c.simulated());
             histories.computeIfAbsent(scope, ignored -> new ArrayList<>()).add(e);
             working.computeIfAbsent(scope, ignored -> new HashMap<>())

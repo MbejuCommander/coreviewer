@@ -1,5 +1,5 @@
 plugins { id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT' }
-version = '0.6.1'
+version = '0.9.0'
 group = 'dev.coreviewer'
 base { archivesName = 'coreviewer-investigator' }
 repositories {
@@ -32,3 +32,19 @@ jar { from('LICENSE') }
 
 loom { accessWidenerPath = file('src/main/resources/coreviewer.accesswidener') }
 
+
+// Optional focused client scenario; omitting the property restores the complete suite.
+processGametestResources {
+    def selectedTest = providers.gradleProperty('coreviewerTestClass').orElse('')
+    inputs.property('selectedTest', selectedTest)
+    doLast {
+        if (!selectedTest.get().isEmpty()) {
+            def descriptor = new File(destinationDir, 'fabric.mod.json')
+            def metadata = new groovy.json.JsonSlurper().parse(descriptor)
+            def tests = metadata.entrypoints['fabric-client-gametest']
+            if (!tests.contains(selectedTest.get())) throw new GradleException('Unknown client scenario: ' + selectedTest.get())
+            metadata.entrypoints['fabric-client-gametest'] = [selectedTest.get()]
+            descriptor.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata)), 'UTF-8')
+        }
+    }
+}

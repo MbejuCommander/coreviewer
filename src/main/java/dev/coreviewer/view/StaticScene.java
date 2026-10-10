@@ -40,6 +40,8 @@ public final class StaticScene {
             case PLAYER_KILL -> c.killView && c.playerDeaths;
             case MOB_KILL -> c.killView && c.mobDeaths;
             case ITEM_ADD, ITEM_REMOVE -> c.itemView;
+            case CONTAINER_ADD, CONTAINER_REMOVE -> c.containerView;
+            case SESSION_LOGIN, SESSION_LOGOUT -> c.sessionView;
         };
     }
 
@@ -53,7 +55,7 @@ public final class StaticScene {
         var result = new ArrayList<Link>();
         var previous = new HashMap<String, CoreTraceEvent>();
         for (var e : ordered) {
-            if (!(e instanceof BlockEvent)) continue;
+            if (e.context().position() == null) continue;
             String group = samePlayer ? e.context().actor() : "*";
             var before = previous.put(group, e);
             if (before == null || before.context().timestamp() >= e.context().timestamp()) continue;

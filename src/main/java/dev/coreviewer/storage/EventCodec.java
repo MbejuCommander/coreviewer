@@ -35,6 +35,10 @@ public final class EventCodec {
                             case BLOCK_BREAK, BLOCK_PLACE -> GSON.fromJson(row, BlockEvent.class);
                             case PLAYER_KILL, MOB_KILL -> GSON.fromJson(row, KillEvent.class);
                             case ITEM_ADD, ITEM_REMOVE -> GSON.fromJson(row, ItemEvent.class);
+                            case CONTAINER_ADD, CONTAINER_REMOVE ->
+                                    GSON.fromJson(row, ContainerEvent.class);
+                            case SESSION_LOGIN, SESSION_LOGOUT ->
+                                    GSON.fromJson(row, SessionEvent.class);
                         };
                 if (!ids.add(event.context().id()))
                     throw new IllegalArgumentException("Duplicate event ID");
@@ -49,7 +53,7 @@ public final class EventCodec {
     public static String csv(List<CoreTraceEvent> events) {
         StringBuilder out =
                 new StringBuilder(
-                        "id,type,timestamp,server,world,dimension,x,y,z,actor,actor_uuid,material,quantity,victim,victim_uuid,entity,cause,simulated,source\r\n");
+                        "id,type,timestamp,server,world,dimension,x,y,z,actor,actor_uuid,material,quantity,victim,victim_uuid,entity,cause,simulated,source,event_type,server_timestamp,action_id,amount,object\r\n");
         for (var event : events) {
             var c = event.context();
             var p = c.position();
@@ -62,7 +66,11 @@ public final class EventCodec {
             if (event instanceof BlockEvent b) material = b.block();
             if (event instanceof ItemEvent i) {
                 material = i.item();
-                quantity = "" + i.quantity();
+                quantity = i.quantity() == 0 ? "" : "" + i.quantity();
+            }
+            if (event instanceof ContainerEvent i) {
+                material = i.item();
+                quantity = i.quantity() == 0 ? "" : "" + i.quantity();
             }
             if (event instanceof KillEvent k) {
                 victim = nullable(k.victim());
@@ -89,7 +97,28 @@ public final class EventCodec {
                 entity,
                 cause,
                 "" + c.simulated(),
-                c.source()
+                c.source(),
+                event instanceof BlockEvent
+                        ? "block"
+                        : event instanceof ContainerEvent
+                                ? "container"
+                                : event instanceof SessionEvent
+                                        ? "session"
+                                        : event instanceof KillEvent ? "kill" : "item",
+                c.timestamp() == 0 ? "" : Instant.ofEpochMilli(c.timestamp()).toString(),
+                switch (event.type()) {
+                    case BLOCK_BREAK -> "block_break";
+                    case BLOCK_PLACE -> "block_place";
+                    case ITEM_ADD -> "item_pickup";
+                    case ITEM_REMOVE -> "item_drop";
+                    case CONTAINER_ADD -> "item_add";
+                    case CONTAINER_REMOVE -> "item_remove";
+                    case SESSION_LOGIN -> "session_login";
+                    case SESSION_LOGOUT -> "session_logout";
+                    case PLAYER_KILL, MOB_KILL -> "entity_kill";
+                },
+                quantity,
+                event instanceof KillEvent ? (victim.isEmpty() ? entity : victim) : material
             };
             out.append(
                             Arrays.stream(values)

@@ -67,11 +67,13 @@ public final class ReplayController {
 
     public static void stop() {
         index = dev.coreviewer.view.EventIndex.EMPTY;
-        engine.loadPrepared(new dev.coreviewer.view.EventIndex.Timeline(java.util.List.of(), false));
+        engine.loadPrepared(
+                new dev.coreviewer.view.EventIndex.Timeline(java.util.List.of(), false));
         lastTick = 0;
     }
 
     public static String load(String world, boolean demo) {
+        if (!demo) return StaticView.show(world, () -> prepareReplay());
         String message = demo ? StaticView.preview() : StaticView.show(world);
         if (!StaticView.active() || (!demo && !StaticView.world().equals(world))) return message;
         index = StaticView.sourceIndex();
@@ -82,6 +84,14 @@ public final class ReplayController {
         return engine.loaded()
                 ? "Loaded " + engine.events().size() + " actions. Paused before the first event."
                 : "No positioned actions to replay.";
+    }
+
+    private static void prepareReplay() {
+        index = StaticView.sourceIndex();
+        engine.loadPrepared(
+                index.timeline(StaticView.server(), StaticView.world(), StaticView.isDemo()));
+        lastTick = 0;
+        pausedAt = System.nanoTime();
     }
 
     public static String time() {
@@ -293,5 +303,6 @@ public final class ReplayController {
         }
         if (engine.playing() || wasPlaying || pausedAt == 0) pausedAt = now;
         wasPlaying = engine.playing();
+        dev.coreviewer.view.EventNavigation.tick();
     }
 }

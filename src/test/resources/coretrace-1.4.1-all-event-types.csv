@@ -1,0 +1,28 @@
+﻿page_requested,page_confirmed,query_action,event_type,server_timestamp,time_relative,actor,action,action_id,action_sign,amount,object,world,x,y,z,content,recorded_username,strikethrough,parse_status,raw_text,raw_coordinates,hover_text,coordinate_hover_text
+1,true,"a:block","block","2026-09-06 11:57:00 UTC","0.05/h ago","jose","broke","block_break","-",,"minecraft:stone","world",12,64,-40,"","",false,"parsed","0.05/h ago - jose broke minecraft:stone.","^ (x12/y64/z-40/world)","2026-09-06 11:57:00 UTC",""
+1,true,"a:block","block","2026-09-06 11:57:00 UTC","0.05/h ago","jose","placed","block_place","+",,"oak_log","",,,,"","",false,"parsed","0.05/h ago + jose placed oak_log.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:session","session","2026-09-06 11:57:00 UTC","0.05/h ago","jose","logged in","session_login","+",,"","world",12,64,-40,"","",false,"parsed","0.05/h ago + jose logged in.","^ (x12/y64/z-40/world)","2026-09-06 11:57:00 UTC",""
+1,true,"a:session","session","2026-09-06 11:57:00 UTC","0.05/h ago","jose","logged out","session_logout","-",,"","",,,,"","",false,"parsed","0.05/h ago - jose logged out.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:chat","chat","2026-09-06 11:57:00 UTC","0.05/h ago","jose","","chat","-",,"","",,,,"Hello, ""world""!","",false,"parsed","0.05/h ago - jose: Hello, ""world""!","","2026-09-06 11:57:00 UTC",""
+1,true,"a:chat","chat","2026-09-06 11:57:00 UTC","0.05/h ago","jose","","chat","-",,"","",,,,"'=1+2","",false,"parsed","0.05/h ago - jose: =1+2","","2026-09-06 11:57:00 UTC",""
+1,true,"a:command","command","2026-09-06 11:57:00 UTC","0.05/h ago","jose","","command","-",,"","",,,,"/say Server maintenance in 10 minutes","",false,"parsed","0.05/h ago - jose: /say Server maintenance in 10 minutes","","2026-09-06 11:57:00 UTC",""
+1,true,"a:click","click","2026-09-06 11:57:00 UTC","0.05/h ago","jose","clicked","interaction","-",,"chest","world",13,64,-40,"","",false,"parsed","0.05/h ago - jose clicked chest.","^ (x13/y64/z-40/world)","2026-09-06 11:57:00 UTC",""
+1,true,"a:container","container","2026-09-06 11:57:00 UTC","0.05/h ago","jose","added","item_add","+",64,"diamond","world",13,64,-40,"","",false,"parsed","0.05/h ago + jose added x64 diamond(↓).","^ (x13/y64/z-40/world)","2026-09-06 11:57:00 UTC",""
+1,true,"a:container","container","2026-09-06 11:57:00 UTC","0.05/h ago","jose","removed","item_remove","-",12,"iron_ingot","",,,,"","",false,"parsed","0.05/h ago - jose removed x12 iron_ingot.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:item","item","2026-09-06 11:57:00 UTC","0.05/h ago","jose","picked up","item_pickup","+",3,"diamond","",,,,"","",false,"parsed","0.05/h ago + jose picked up x3 diamond.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:item","item","2026-09-06 11:57:00 UTC","0.05/h ago","jose","dropped","item_drop","-",8,"stone","",,,,"","",false,"parsed","0.05/h ago - jose dropped x8 stone.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:item","item","2026-09-06 11:57:00 UTC","0.05/h ago","jose","deposited","ender_deposit","-",2,"ender_pearl","",,,,"","",false,"parsed","0.05/h ago - jose deposited x2 ender_pearl.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:item","item","2026-09-06 11:57:00 UTC","0.05/h ago","jose","withdrew","ender_withdraw","+",4,"emerald","",,,,"","",false,"parsed","0.05/h ago + jose withdrew x4 emerald.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:item","item","2026-09-06 11:57:00 UTC","0.05/h ago","jose","threw","projectile_throw","-",1,"snowball","",,,,"","",false,"parsed","0.05/h ago - jose threw x1 snowball.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:item","item","2026-09-06 11:57:00 UTC","0.05/h ago","jose","shot","projectile_shoot","-",1,"arrow","",,,,"","",false,"parsed","0.05/h ago - jose shot x1 arrow.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:inventory","inventory","2026-09-06 11:57:00 UTC","0.05/h ago","jose","added","item_add","+",4,"oak_planks","",,,,"","",false,"parsed","0.05/h ago + jose added x4 oak_planks.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:inventory","inventory","2026-09-06 11:57:00 UTC","0.05/h ago","jose","removed","item_remove","-",1,"oak_log","",,,,"","",false,"parsed","0.05/h ago - jose removed x1 oak_log.","","2026-09-06 11:57:00 UTC",""
+1,true,"a:kill","kill","2026-09-06 11:57:00 UTC","0.05/h ago","jose","killed","entity_kill","-",,"zombie","world_nether",-12,64,-40,"","",false,"parsed","0.05/h ago - jose killed zombie.","^ (x-12/y64/z-40/world_nether)","2026-09-06 11:57:00 UTC",""
+1,true,"a:sign","sign","2026-09-06 11:57:00 UTC","0.05/h ago","jose","","sign_text","-",,"","world",14,64,-40,"Welcome!
+Shop, ""diamonds""
+2 per stack
+Thank you","",false,"parsed","0.05/h ago - jose: Welcome!
+Shop, ""diamonds""
+2 per stack
+Thank you","^ (x14/y64/z-40/world)","2026-09-06 11:57:00 UTC",""
+1,true,"a:username","username","2026-09-06 11:57:00 UTC","0.05/h ago","jose","logged in as","username_observed","-",,"","",,,,"","OldJose",false,"parsed","0.05/h ago - jose logged in as OldJose.","","2026-09-06 11:57:00 UTC",""

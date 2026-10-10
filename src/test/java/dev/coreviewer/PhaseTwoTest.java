@@ -44,7 +44,13 @@ class PhaseTwoTest {
                 new CoreProtectChatParser().parse(lines, "test:25565", Set.of("minecraft:zombie"));
         assertEquals(6, result.events().size());
         assertEquals(
-                Set.of(EventType.values()),
+                Set.of(
+                        EventType.BLOCK_BREAK,
+                        EventType.BLOCK_PLACE,
+                        EventType.PLAYER_KILL,
+                        EventType.MOB_KILL,
+                        EventType.CONTAINER_ADD,
+                        EventType.CONTAINER_REMOVE),
                 new HashSet<>(result.events().stream().map(CoreTraceEvent::type).toList()));
         var first = result.events().getFirst().context();
         assertEquals(Instant.parse("2026-09-26T03:00:00Z").toEpochMilli(), first.timestamp());

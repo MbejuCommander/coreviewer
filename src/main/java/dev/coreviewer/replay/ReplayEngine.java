@@ -96,7 +96,9 @@ public final class ReplayEngine {
                 double nextTime = events.get(next).context().timestamp();
                 double previous = next == 0 ? start : events.get(next - 1).context().timestamp();
                 double skipAt = Math.max(cursor, previous + tail);
-                if (nextTime - previous > 10000 && target >= skipAt && nextTime > skipAt)
+                double wait = Math.max(tail, config.smartTimelineSeconds * 1000);
+                skipAt = Math.max(cursor, previous + wait);
+                if (nextTime - previous > wait && target >= skipAt && nextTime > skipAt)
                     target += nextTime - skipAt;
                 if (nextTime > target) break;
                 next = bound(nextTime, true);

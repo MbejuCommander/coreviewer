@@ -73,11 +73,11 @@ class PhaseTwoTest {
                                         line("^ (x1/y2/z3/world)")),
                                 "server",
                                 Set.of());
-        assertEquals(
-                0,
-                result.events()
-                        .size()); // An interrupted row is rejected, never attached to another
-        // action.
+        assertEquals(2, result.events().size());
+        assertNull(result.events().getFirst().context().position());
+        assertEquals(EventType.BLOCK_CLICK, result.events().get(1).type());
+        assertEquals("minecraft:chest", ((BlockEvent) result.events().get(1)).block());
+        assertEquals(1, result.events().get(1).context().position().x());
         var item =
                 new CoreProtectChatParser()
                         .parse(

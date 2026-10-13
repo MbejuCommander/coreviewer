@@ -25,9 +25,9 @@ public final class PhaseThreeGameTest implements FabricClientGameTest {
             context.waitTicks(10);
             context.runOnClient(
                     mc -> {
-                        if (StaticRenderer.visibleCount != 7)
+                        if (StaticRenderer.visibleCount != 8)
                             throw new AssertionError(
-                                    "Expected 7 visible previews, got "
+                                    "Expected 8 visible previews, including an ender-chest click; got "
                                             + StaticRenderer.visibleCount);
                         if (StaticRenderer.figureCount != 2 || StaticRenderer.itemCount != 2)
                             throw new AssertionError(

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.10.0 — 2026-10-11 — Click evidence and Excel workbooks
+
+- Capture and import block-click actions and render clicked blocks, including chest and ender-chest holograms, in static view and replay with chronological arrows and configurable click visibility/color.
+- Add Clicks to Statistics with clicked-block counts, player breakdowns and individual coordinate evidence.
+- Import compatible sheets from `.xlsx` workbooks into selected CSVs, preserving chronological order across sheets and existing investigations. The original workbook is unchanged; legacy `.xls` is unsupported.
+- Rename the investigation file settings and library controls to reflect CSV and Excel support, and bundle the Excel reader libraries.
+
+## 0.9.2 — 2026-10-10 — Imported CoreTrace capture cleanup
+
+- Delete the recognized English/Spanish CoreTrace companion set after the last CSV, including orphaned sets when deleting all CSVs.
+- Preserve folders with additional files, remaining CSVs or symlinks; never clean external CoreTrace exports.
+- Updated deletion confirmation messages and regression coverage.
+
+## 0.9.1 — 2026-10-10 — Empty CSV folder cleanup
+
+- Delete all CSVs now removes pre-existing empty subfolders, including when no CSV files remain.
+- Preserves the CSV root and folders containing other files, including CoreTrace session metadata and transcripts.
+- Added a regression test for the reported folder layout.
+
 ## 0.9.0 — 2026-10-09 — Evidence navigation and player memorials
 
 - Removed the intermediate settings dashboard; Configure opens Cloth Config directly.
@@ -116,6 +135,8 @@
 - Added unit tests and an isolated client UI integration test.
 - Reserved future configuration without implementing capture, automatic pagination, static rendering or replay.
 - Archived the earlier CoreView prototype separately; it is not part of the Phase 1 build.
+
+
 
 
 

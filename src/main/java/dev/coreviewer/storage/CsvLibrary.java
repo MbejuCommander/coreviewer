@@ -241,16 +241,21 @@ public final class CsvLibrary {
     public void delete(String name) throws IOException {
         Path target = path(name);
         Files.deleteIfExists(target);
-        pruneEmptyParents(target.getParent());
+        pruneEmptyParents(target.getParent(), true);
         invalidate(name);
         bindings.removeIf(b -> b.name().equals(name));
         saveManifest();
     }
 
     private void pruneEmptyParents(Path directory) throws IOException {
+        pruneEmptyParents(directory, false);
+    }
+
+    private void pruneEmptyParents(Path directory, boolean removeCaptureFiles) throws IOException {
         Path base = folder.toAbsolutePath().normalize();
         while (directory != null && directory.startsWith(base) && !directory.equals(base)) {
             if (Files.isSymbolicLink(directory)) return;
+            if (removeCaptureFiles && Files.isDirectory(directory)) removeCoreTraceCompanions(directory);
             try {
                 Files.delete(directory);
             } catch (DirectoryNotEmptyException ex) {
@@ -261,8 +266,32 @@ public final class CsvLibrary {
         }
     }
 
+    private void removeCoreTraceCompanions(Path directory) throws IOException {
+        List<Path> children;
+        try (var stream = Files.list(directory)) {
+            children = stream.toList();
+        }
+        Set<String> names = new HashSet<>();
+        Set<String> allowed = Set.of("session.json", "summary.txt", "sesion.json", "resumen.txt", "transcript.log");
+        for (Path child : children) {
+            String name = child.getFileName().toString();
+            if (!allowed.contains(name) || !Files.isRegularFile(child, LinkOption.NOFOLLOW_LINKS)) return;
+            names.add(name);
+        }
+        boolean english = names.containsAll(Set.of("session.json", "summary.txt", "transcript.log"));
+        boolean spanish = names.containsAll(Set.of("sesion.json", "resumen.txt", "transcript.log"));
+        if (english || spanish) for (Path child : children) Files.delete(child);
+    }
+
     public void deleteAll() throws IOException {
         for (Path file : files()) delete(relative(file));
+        // Include folders left behind by older releases, even when no CSV remains.
+        List<Path> directories;
+        try (var paths = Files.walk(folder)) {
+            directories = paths.filter(p -> Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS))
+                    .sorted(Comparator.reverseOrder()).toList();
+        }
+        for (Path directory : directories) pruneEmptyParents(directory.toAbsolutePath().normalize(), true);
     }
 
     public void enterSimple() throws IOException {

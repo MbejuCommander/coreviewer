@@ -10,6 +10,9 @@ import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.*;
 import net.minecraft.network.chat.Component;
 
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
 public final class CsvLibraryScreen extends Screen {
@@ -18,12 +21,34 @@ public final class CsvLibraryScreen extends Screen {
     private boolean busy;
 
     public CsvLibraryScreen(Screen parent) {
-        super(Component.literal("CSV Library"));
+        super(Component.literal("Investigation Files"));
         this.parent = parent;
     }
 
     public static void openFolder() {
         FolderOpener.open(CoreTraceClient.service.csvFolder());
+    }
+
+    private void chooseWorkbook() {
+        CompletableFuture.runAsync(
+                () -> {
+                    var dialog =
+                            new FileDialog((Frame) null, "Import .xlsx workbook", FileDialog.LOAD);
+                    dialog.setFile("*.xlsx");
+                    dialog.setVisible(true);
+                    String selected = dialog.getFile();
+                    String directory = dialog.getDirectory();
+                    dialog.dispose();
+                    if (selected == null || directory == null) return;
+                    Path path = Path.of(directory, selected);
+                    Minecraft.getInstance()
+                            .execute(
+                                    () ->
+                                            action(
+                                                    CoreTraceClient.service.importXlsx(
+                                                            path,
+                                                            CoreTraceClient.serverIdentity())));
+                });
     }
 
     private Button button(String text, int x, int y, int w, Runnable action) {
@@ -42,15 +67,24 @@ public final class CsvLibraryScreen extends Screen {
                         });
         CoreTraceClient.stopCapture("CSV library changed.");
         StaticView.hide();
-        work.thenAccept(
-                message ->
-                        Minecraft.getInstance()
-                                .execute(
-                                        () -> {
-                                            busy = false;
-                                            CoreTraceClient.tell(message);
-                                            if (minecraft.gui.screen() == this) rebuildWidgets();
-                                        }));
+        work.handle(
+                        (message, error) ->
+                                error == null
+                                        ? message
+                                        : "Investigation file operation failed: "
+                                                + (error.getCause() == null
+                                                        ? error.getMessage()
+                                                        : error.getCause().getMessage()))
+                .thenAccept(
+                        message ->
+                                Minecraft.getInstance()
+                                        .execute(
+                                                () -> {
+                                                    busy = false;
+                                                    CoreTraceClient.tell(message);
+                                                    if (minecraft.gui.screen() == this)
+                                                        rebuildWidgets();
+                                                }));
     }
 
     private void confirm(String description, Runnable action) {
@@ -72,22 +106,24 @@ public final class CsvLibraryScreen extends Screen {
                 count = Math.max(1, (height - 135) / 28);
         var files = service.csvFiles();
         page = Math.min(page, Math.max(0, (files.size() - 1) / count));
-        button("Open CSV folder", x, 30, w / 3 - 4, CsvLibraryScreen::openFolder);
+        button("Open data folder", x, 30, w / 4 - 4, CsvLibraryScreen::openFolder);
+        button("Import .xlsx", x + w / 4, 30, w / 4 - 4, this::chooseWorkbook);
         button(
                 "Refresh",
-                x + w / 3,
+                x + w / 2,
                 30,
-                w / 3 - 4,
+                w / 4 - 4,
                 () -> action(service.refreshCsv(CoreTraceClient.serverIdentity())));
         button(
                 "Delete all CSVs",
-                x + w * 2 / 3,
+                x + w * 3 / 4,
                 30,
-                w / 3,
+                w / 4,
                 () ->
                         confirm(
                                 "Permanently delete every CSV in the shared folder and its"
-                                    + " subfolders?",
+                                    + " subfolders? CoreTrace companion files in otherwise empty"
+                                    + " capture folders will also be deleted.",
                                 () -> action(service.clear())));
         button(
                                 "Select all",
@@ -157,7 +193,11 @@ public final class CsvLibraryScreen extends Screen {
                     40,
                     () ->
                             confirm(
-                                    "Permanently delete " + file.name() + "?",
+                                    "Permanently delete "
+                                            + file.name()
+                                            + "? If this is the last CSV, its CoreTrace companion"
+                                            + " files will also be deleted when no other files"
+                                            + " remain.",
                                     () -> action(service.deleteCsv(file.name()))));
         }
         button(
@@ -185,7 +225,9 @@ public final class CsvLibraryScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float dt) {
         super.extractRenderState(g, mx, my, dt);
         g.centeredText(font, title, width / 2, 10, 0xFFFFFFFF);
-        if (busy) g.centeredText(font, "Loading CSVs…", width / 2, height - 43, 0xFFFFFF55);
+        if (busy)
+            g.centeredText(
+                    font, "Loading investigation files…", width / 2, height - 43, 0xFFFFFF55);
     }
 
     @Override

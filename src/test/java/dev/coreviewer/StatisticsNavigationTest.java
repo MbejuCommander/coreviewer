@@ -97,4 +97,44 @@ class StatisticsNavigationTest {
         library.deleteAll();
         assertTrue(Files.exists(library.folder().resolve("Keep/notes.txt")));
     }
+
+    @Test
+    void deleteAllCleansPreviouslyEmptyFoldersWithoutAnyCsv() throws Exception {
+        var library = new CsvLibrary(root);
+        library.initialize();
+        Files.createDirectories(library.folder().resolve("Old/nested/empty"));
+        Files.createDirectories(library.folder().resolve("CoreTrace"));
+        Files.writeString(library.folder().resolve("CoreTrace/session.json"), "{}");
+        library.deleteAll();
+        assertFalse(Files.exists(library.folder().resolve("Old")));
+        assertTrue(Files.exists(library.folder().resolve("CoreTrace/session.json")));
+        assertTrue(Files.isDirectory(library.folder()));
+    }
+
+    @Test
+    void importedCaptureCompanionsAreRemovedOnlyAfterLastCsv() throws Exception {
+        var library = new CsvLibrary(root);
+        library.initialize();
+        library.write("Imported/a.csv", List.of(event("Jose", EventType.BLOCK_BREAK, 0)), "s");
+        library.write("Imported/b.csv", List.of(event("Jose", EventType.BLOCK_BREAK, 1)), "s");
+        Path capture = library.folder().resolve("Imported");
+        for (String name : List.of("session.json", "summary.txt", "transcript.log"))
+            Files.writeString(capture.resolve(name), "fixture");
+        library.delete("Imported/a.csv");
+        assertTrue(Files.exists(capture.resolve("session.json")));
+        library.delete("Imported/b.csv");
+        assertFalse(Files.exists(capture));
+
+        Path orphan = Files.createDirectories(library.folder().resolve("OldSpanish"));
+        Path keep = Files.createDirectories(library.folder().resolve("KeepOtherFiles"));
+        for (Path directory : List.of(orphan, keep))
+            for (String name : List.of("sesion.json", "resumen.txt", "transcript.log"))
+                Files.writeString(directory.resolve(name), "fixture");
+        Files.writeString(keep.resolve("notes.txt"), "keep");
+        library.deleteAll();
+        assertFalse(Files.exists(orphan));
+        assertTrue(Files.exists(keep.resolve("notes.txt")));
+        assertTrue(Files.exists(keep.resolve("sesion.json")));
+        assertTrue(Files.isDirectory(library.folder()));
+    }
 }

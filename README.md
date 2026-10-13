@@ -1,6 +1,6 @@
-# Coreviewer investigator — 0.9.0
+# Coreviewer investigator — 0.10.0
 
-Client-only Fabric investigation tool for Minecraft Java **26.3**. Moderators capture English CoreProtect command responses or import CoreTrace CSVs, then inspect chronological static views, event replays and statistics. No SQL, server files or server-side CoreProtect API access is required. All mod text is in English.
+Client-only Fabric investigation tool for Minecraft Java **26.3**. Moderators capture English CoreProtect command responses or import CoreTrace CSVs and multi-sheet `.xlsx` workbooks, then inspect chronological static views, event replays and statistics. No SQL, server files or server-side CoreProtect API access is required. All mod text is in English.
 
 ## Quick start
 
@@ -9,12 +9,12 @@ Client-only Fabric investigation tool for Minecraft Java **26.3**. Moderators ca
 3. Run `/co lookup r:100 t:1h` for passive capture. To fetch later pages automatically, enable **AUTO PAGE ADVANCE** before starting a lookup. Coreviewer saves supported events in its CSV library.
 4. Open `/coreviewer static` for a paged world view, `/coreviewer replay` for chronological playback, or **Statistics** for a player and material breakdown. Select the matching CoreProtect world in static/replay.
 
-For a previously exported investigation, copy CSV files into `<game directory>/coreviewer/csv/`, then use **Settings → CSV → Select CSV Files** to choose them. You can place CSV files inside subfolders.
+To open an exported investigation, use **Settings → CSV / EXCEL → Manage Investigation Files**. Copy `.csv` files into `<game directory>/coreviewer/csv/` (subfolders are supported), or choose **Import .xlsx** for an Excel workbook.
 
 ## Guide contents
 
 - [Installation](#installation) · [Settings](#settings) · [Capture](#capture)
-- [CSV library and imports](#csv-library-and-imports) · [Radius and teleport](#general-radius-and-teleport)
+- [Investigation files and imports](#investigation-files-and-imports) · [Radius and teleport](#general-radius-and-teleport)
 - [Static view](#static-view) · [Replay](#replay) · [Statistics](#statistics)
 - [Supported evidence and limits](#supported-evidence-and-limits) · [Files and commands](#files-and-commands)
 - [Development and validation](#development-and-validation)
@@ -23,13 +23,13 @@ This README can be copied into a GitHub Wiki `Home` page. In a separate Wiki rep
 
 ## Installation
 
-Use **JDK/Java 25**, Minecraft **26.3**, Fabric Loader **0.19.5+**, Fabric API **0.161.0+26.3**, Cloth Config **26.3.158** and optionally Mod Menu **21.0.0**. Dependencies are not bundled. Install `Coreviewer-Investigator-0.9.0-MC26.3.jar` in the client `mods` folder, replacing the previous Coreviewer JAR.
+Use **JDK/Java 25**, Minecraft **26.3**, Fabric Loader **0.19.5+**, Fabric API **0.161.0+26.3**, Cloth Config **26.3.158** and optionally Mod Menu **21.0.0**. Fabric API and Cloth Config are separate installs; Excel reader libraries are bundled in the Coreviewer JAR. Install `Coreviewer-Investigator-0.10.0-MC26.3.jar` in the client `mods` folder.
 
 Coreviewer uses mod ID `coreviewer`, commands `/coreviewer` and its own data directory. CoreTrace (`coretrace`) can remain installed. Enable only one automatic CoreProtect pager per investigation. The server must already provide CoreProtect and grant the required command permissions.
 
 ## Settings
 
-Configure opens Cloth Config directly; the intermediate dashboard has been removed. **General → Menu Animations** controls smooth scrolling and subtle transitions. Settings retain category tabs, search, reset and Save & Quit controls. The folder buttons launch the operating system file manager asynchronously. Historical block rendering supports Minecraft's Improved Transparency option in both through-wall and depth-tested modes.
+Configure opens Cloth Config directly. **General → Menu Animations** controls smooth scrolling and subtle transitions. Settings have category tabs, search, reset and Save & Quit controls. The folder buttons launch the operating system file manager asynchronously. Historical block rendering supports Minecraft's Improved Transparency option in both through-wall and depth-tested modes.
 
 ## Capture
 
@@ -42,17 +42,19 @@ Configure opens Cloth Config directly; the intermediate dashboard has been remov
 
 Capture starts only after an outgoing supported lookup command. It ignores player chat, action bars and its own feedback. One request can be outstanding; commands are delayed, unanswered pages are not retried, and errors, repeated pages, disconnects or a 30-second timeout stop the session. Chat does not contain reliable query IDs, so avoid overlapping lookups. Server system messages are not authenticated CoreProtect evidence.
 
-## CSV library and imports
+## Investigation files and imports
 
-Open **Settings → CSV → Open Import / Export Folder**. Both imports and exports use `<game directory>/coreviewer/csv/`.
+Open **Settings → CSV / EXCEL → Open data folder**. Both CSV imports and exports use `<game directory>/coreviewer/csv/`.
 
-Copy CSVs exported by **CoreTrace 1.4.1+26.3** into this folder or any of its subfolders. Nested CSVs are discovered recursively and listed with their relative folder paths. Open **Select CSV Files**, click **Refresh**, and select the files to combine. Green checkboxes indicate selection. The screen includes Select all, Deselect all, up/down ordering, individual deletion, and Delete all CSVs. Deletion asks for confirmation and affects CSVs in this shared folder and its subfolders only. After deletion, empty parent folders are removed up to (but never including) the shared CSV root. A folder containing another CSV or any other file is preserved. It does not delete external CoreTrace files or archived CSVs.
+Copy CSVs exported by **CoreTrace 1.4.1+26.3** into this folder or any of its subfolders. Nested CSVs are discovered recursively and listed with their relative folder paths. Open **Manage Investigation Files**, click **Refresh**, and select the files to combine. Green checkboxes indicate selection. The screen includes Select all, Deselect all, up/down ordering, individual deletion, and Delete all CSVs. Deletion asks for confirmation and affects CSVs in this shared folder and its subfolders only. After deletion, empty parent folders are removed up to (but never including) the shared CSV root. After the last CSV is deleted, a folder containing only the complete CoreTrace companion set (session.json, summary.txt and transcript.log, or sesion.json, resumen.txt and transcript.log) is cleaned up too. Delete all CSVs also cleans orphaned companion sets. Folders with additional files, other CSVs or symbolic links are preserved. This applies only inside coreviewer/csv; external coretrace/exports is untouched. It does not delete external CoreTrace files or archived CSVs.
+
+To import Excel, choose **Import .xlsx** in **Manage Investigation Files** and select a workbook. Coreviewer reads each sheet that has a compatible event header, converts it to a CSV in a new `import-<workbook>` folder and selects the imported sheets. Static view, replay and statistics then combine those events by recorded timestamp, regardless of sheet order. Unrelated sheets are ignored; the original workbook is not modified. Only modern `.xlsx` is supported, not `.xls`. Import is limited to 32 MB per workbook, 32 sheets, 200,000 rows and 40 columns per sheet. Workbook dates need an explicit timezone in the event timestamp column; Excel date-only cells cannot supply a reliable timezone. Import is unavailable in Simple Mode.
 
 Files without server metadata are associated with the current server when first selected. Import them while connected to the intended server. Coreviewer exports retain their own server metadata. File selection/order is saved in `csv-library.json`. Reordering changes the file list and tie order, but **all selected events are sorted by recorded timestamp** for static/replay: an earlier block break precedes a later item action even when its CSV is lower in the list. Repeated Coreviewer event IDs are deduplicated; overlapping queries with distinct IDs may still overlap.
 
-**Simple Mode** defaults OFF. Enabling it merges the currently selected events into a new capture folder and moves other existing library CSVs to `coreviewer/csv-archive/before-simple-<id>/`. The warning explains that subsequent captures replace the single active CSV; selection is unavailable in this mode. The previous simple capture is replaced when the new capture first saves supported events, including a partial capture. An empty capture leaves it intact. Files copied manually into the folder while Simple Mode is ON remain unselected until the mode is disabled. Archives are never automatically deleted. `simple-csv.json` remembers the active file across restarts; older root-level `simple.csv` files remain supported.
+**Simple Mode** defaults OFF. Enabling it merges the currently selected events into a new capture folder and moves other existing library CSVs to `coreviewer/csv-archive/before-simple-<id>/`. The warning explains that subsequent captures replace the single active CSV; selection is unavailable in this mode. The active simple capture is replaced when the new capture first saves supported events, including a partial capture. An empty capture leaves it intact. Files copied manually into the folder while Simple Mode is ON remain unselected until the mode is disabled. Archives are never automatically deleted. `simple-csv.json` remembers the active file across restarts.
 
-Auto Save, Backup and Replace Previous Capture controls have been removed. Capture saving is always automatic. The old configuration properties may remain for migration, but no longer control CSV saving. Legacy `events.json` is migrated once to `migrated-events.csv` when no library manifest exists; originals remain intact. CSV is now the investigation data source, not JSON.
+Capture saving is automatic. Imported workbook sheets and captures are stored as CSV files for selection and replay.
 
 ## General: radius and teleport
 
@@ -76,6 +78,7 @@ Open `/coreviewer static` (**G**). Select a CoreProtect world and **Show selecte
 
 - **V/B**: previous/next chronological page. Default **Maximum Visible Events: 10**. Page progress is centered above health, yellow for 10 seconds by default; color, duration and visibility are configurable.
 - **Block View**: transparent default block models, outlines, colors, opacity and optional texture tint.
+- **Click View**: a ghost of the clicked block at its recorded position, including chest and ender chest item-model fallbacks, with its own color and the same page, replay, label, radius and arrow behavior as other positioned events.
 - **Kill View**: player deaths use a custom stone memorial with the victim's head and two vanilla flowers; mob deaths retain frozen display figures. Victim/killer/cause labels remain available. Missing causes stay unknown.
 - **Item View**: floating item models and quantities; optional generic player-head holograms.
 - **Container View**: chest-style inventory slots with green added/red removed backgrounds, item models, quantities and actor names.
@@ -102,7 +105,7 @@ Open `/coreviewer replay` (**H**), choose a world and **Load world**. **Play in 
 
 All keys are configurable. They apply only in the world, without an open menu; active shortcuts take priority over vanilla bindings. A slider supports seeking, and equal-time actions appear together.
 
-**Maximum Visible Events** defaults to **10** (blank/reset also use 10; existing saved limits are preserved). The rolling window removes the oldest action when a new one exceeds the limit; rewind restores the corresponding earlier window. Progress shows reached/total and window size above health, separately from static progress. It hides at completion/stop or after the configurable pause timeout (default 10 seconds). Color and visibility are configurable.
+**Maximum Visible Events** defaults to **10** (blank/reset also use 10). The rolling window removes the oldest action when a new one exceeds the limit; rewind restores the corresponding earlier window. Progress shows reached/total and window size above health, separately from static progress. It hides at completion/stop or after the configurable pause timeout (default 10 seconds). Color and visibility are configurable.
 
 **Smart Timeline** defaults ON. The **Smart Timeline (seconds)** text field is near the top of REPLAY settings, with an adjacent **ON/OFF** button. It defaults to **2** seconds and accepts nonnegative numbers, including decimals; clearing the field restores 2. Existing saved values are preserved until edited or reset. Long idle gaps are compressed after the configured wait and completion of the preceding block animation. Timeline Speed scales this wait along with historical time. Zero skips idle gaps as soon as animations allow. Disable Smart Timeline to preserve idle time. Block Break Speed, Block Place Speed and Timeline Speed support 0.25×, 0.5×, 1×, 2× and 4×.
 
@@ -112,7 +115,7 @@ Replay reconstructs logged actions, not walking paths or an authoritative histor
 
 Open **Settings → STATISTICS → Open Statistics**, or **Statistics** on the dashboard. Statistics use all selected CSVs, independently of the view's radius and world binding.
 
-The category dropdown contains **All**, **Blocks**, **Items**, **Containers**, **Kills**, **Sessions**. The bordered table uses soft green for additions/placements/logins and soft red for removals/breaks/logouts. **Compact** defaults ON: opposing actions for the same material and category share one column, with green additions / red removals (for example, `10 / 5`). Different categories are never merged into one unit. Turn Compact OFF for separate action columns. **Show details** hides or shows header names while preserving icons and tooltips. Both preferences are saved. Horizontal arrows browse columns while the player column stays fixed. The magnifier **Item** search filters matching material/action columns; **Player** search jumps to the first matching player row (exact names have priority). **↑ Previous / ↓ Next** page through players.
+The category dropdown contains **All**, **Blocks**, **Clicks**, **Items**, **Containers**, **Kills**, **Sessions**. Clicks have their own columns with clicked-block icons and counts; click a player and then a block icon to inspect individual click coordinates. The bordered table uses soft green for additions/placements/logins and soft red for removals/breaks/logouts. **Compact** defaults ON: opposing actions for the same material and category share one column, with green additions / red removals (for example, `10 / 5`). Different categories are never merged into one unit. Turn Compact OFF for separate action columns. **Show details** hides or shows header names while preserving icons and tooltips. Both preferences are saved. Horizontal arrows browse columns while the player column stays fixed. The magnifier **Item** search filters matching material/action columns; **Player** search jumps to the first matching player row (exact names have priority). **↑ Previous / ↓ Next** page through players.
 
 Rows default to player A–Z. Each column arrow cycles highest count first → lowest first → player A–Z. **Sort: ADDED / REMOVED / TOTAL** chooses which number to rank in compact columns. Alphabetical ties are deterministic. **Reset filters** clears searches, category and sorting; sorting is not saved when the statistics screen is closed.
 
@@ -122,9 +125,9 @@ The **TOTAL** row sums every player in the current category/filter, not just the
 
 ## Supported evidence and limits
 
-CoreTrace CSV import supports schema 2 block break/place, item pickup/drop, container add/remove, kills, sessions, and available ender-chest/projectile item records. Inventory, chat, command, username, sign and unsupported actions are skipped and counted. CSV parsing supports UTF-8 BOM, optional `sep=,`, quoted commas/newlines and reordered header columns. Legacy Coreviewer CSVs are supported too.
+CoreTrace CSV import supports schema 2 block break/place/click, item pickup/drop, container add/remove, kills, sessions, and available ender-chest/projectile item records. Inventory, chat, command, username, sign and unsupported actions are skipped and counted. CSV parsing supports UTF-8 BOM, optional `sep=,`, quoted commas/newlines and reordered header columns. Compatible sheets in `.xlsx` workbooks use the same event parser after import.
 
-English chat supports broke/placed, killed, added/removed (container), picked up/dropped/withdrew/deposited/threw/shot, and logged in/out. Coordinates come from visible `(x…/y…/z…/world)` lines. Hover timestamps are preferred; relative chat ages are marked approximate. CSV timestamps must contain a timezone or ISO offset; unavailable/invalid times remain unknown and are excluded from timelines but retained for statistics. Missing UUIDs, causes, coordinates and quantities are never fabricated. Quantity zero internally means unknown and exports as blank.
+English chat supports broke/placed/clicked, killed, added/removed (container), picked up/dropped/withdrew/deposited/threw/shot, and logged in/out. Coordinates come from visible `(x…/y…/z…/world)` lines. Hover timestamps are preferred; relative chat ages are marked approximate. CSV timestamps must contain a timezone or ISO offset; unavailable/invalid times remain unknown and are excluded from timelines but retained for statistics. Missing UUIDs, causes, coordinates and quantities are never fabricated. Quantity zero internally means unknown and exports as blank.
 
 Plain-text mob/player names can be ambiguous. Entity registry matches are treated as mobs; unknown unnamespaced names as players. This cannot prove whether a player named `zombie` is a mob. Demo data is labeled and excluded from real world timelines; do not select simulated CSVs for evidentiary statistics.
 
@@ -163,6 +166,11 @@ Parsing, disk writes, statistics aggregation and index construction run off the 
 
 Tests cover configuration, capture scheduling, CSV compatibility with the supplied CoreTrace 1.4.1 fixture, escaping, unknown metadata, selection persistence, chronology, Simple Mode, statistics, replay and spatial indexing. Isolated Minecraft client scenarios exercise configuration, capture, rendering, replay controls, library selection, statistics, container/session models, radius filtering and a permitted teleport. These are local simulated tests, not validation against a live CoreProtect server.
 
-Version 0.9.0 verification: **62 unit tests and all seven isolated Minecraft client scenarios passed**. Includes regression coverage for sorting paired counts, material/player searches, bounded evidence pages, empty-folder cleanup, current-skin holograms, memorial rendering and server timestamps. Live CoreProtect-server validation remains separate from local simulated tests.
+Version 0.10.0 verification: **65 unit tests passed**, including multi-sheet `.xlsx` import, click parsing and click statistics. An isolated Minecraft client rendering scenario also passed. Live CoreProtect-server validation remains separate from local simulated tests.
 
 Screenshots: [direct settings](docs/direct-settings.png), [player memorial](docs/player-memorial.png), [container slot](docs/container-slot.png), [search and sorting](docs/statistics-search-sort.png), [individual evidence](docs/statistics-evidence.png), [category dropdown](docs/statistics-dropdown.png), [Smart Timeline input](docs/smart-timeline.png), [icon-only statistics](docs/statistics-icons-only.png), [CSV library](docs/csv-library.png), [statistics](docs/statistics-all.png), [player statistics](docs/statistics-player.png), [containers and sessions](docs/container-sessions.png).
+
+
+
+
+

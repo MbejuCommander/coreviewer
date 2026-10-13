@@ -3,6 +3,7 @@ package dev.coreviewer.model;
 public enum EventType {
     BLOCK_BREAK,
     BLOCK_PLACE,
+    BLOCK_CLICK,
     PLAYER_KILL,
     MOB_KILL,
     ITEM_ADD,

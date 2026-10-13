@@ -85,7 +85,7 @@ public final class CsvEvents {
                 int amount = quantity.isBlank() ? 0 : Integer.parseInt(quantity);
                 CoreTraceEvent event =
                         switch (type) {
-                            case BLOCK_BREAK, BLOCK_PLACE ->
+                            case BLOCK_BREAK, BLOCK_PLACE, BLOCK_CLICK ->
                                     new BlockEvent(context, type, material);
                             case ITEM_ADD, ITEM_REMOVE ->
                                     new ItemEvent(context, type, material, amount);
@@ -112,11 +112,12 @@ public final class CsvEvents {
     private static EventType type(Map<String, String> m) {
         if (!get(m, "type").isBlank()) return EventType.valueOf(get(m, "type"));
         if (!get(m, "event_type").isBlank()
-                && !Set.of("block", "session", "container", "item", "kill")
+                && !Set.of("block", "click", "session", "container", "item", "kill")
                         .contains(get(m, "event_type"))) return null;
         return switch (get(m, "action_id")) {
             case "block_break" -> EventType.BLOCK_BREAK;
             case "block_place" -> EventType.BLOCK_PLACE;
+            case "interaction" -> EventType.BLOCK_CLICK;
             case "session_login" -> EventType.SESSION_LOGIN;
             case "session_logout" -> EventType.SESSION_LOGOUT;
             case "item_pickup", "ender_withdraw" -> EventType.ITEM_ADD;

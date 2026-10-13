@@ -37,6 +37,7 @@ public final class StaticScene {
     public static boolean visible(CoreTraceEvent e, CoreTraceConfig c) {
         return switch (e.type()) {
             case BLOCK_BREAK, BLOCK_PLACE -> c.blockView;
+            case BLOCK_CLICK -> c.clickView;
             case PLAYER_KILL -> c.killView && c.playerDeaths;
             case MOB_KILL -> c.killView && c.mobDeaths;
             case ITEM_ADD, ITEM_REMOVE -> c.itemView;

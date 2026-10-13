@@ -6,6 +6,7 @@ public final class EventStatistics {
     public enum Category {
         ALL,
         BLOCKS,
+        CLICKS,
         ITEMS,
         CONTAINERS,
         KILLS,
@@ -21,6 +22,7 @@ public final class EventStatistics {
             long unknownAmounts) {}
 
     public static Category category(CoreTraceEvent event) {
+        if (event.type() == EventType.BLOCK_CLICK) return Category.CLICKS;
         if (event instanceof BlockEvent) return Category.BLOCKS;
         if (event instanceof ItemEvent) return Category.ITEMS;
         if (event instanceof ContainerEvent) return Category.CONTAINERS;
@@ -96,13 +98,17 @@ public final class EventStatistics {
             String[] parts = key.split("\\|", 2);
             String type = parts[0], material = parts.length > 1 ? parts[1] : "";
             String family =
-                    type.startsWith("BLOCK")
-                            ? "BLOCKS"
-                            : type.startsWith("ITEM")
-                                    ? "ITEMS"
-                                    : type.startsWith("CONTAINER")
-                                            ? "CONTAINERS"
-                                            : type.startsWith("SESSION") ? "SESSIONS" : "KILLS";
+                    type.equals("BLOCK_CLICK")
+                            ? "CLICKS"
+                            : type.startsWith("BLOCK")
+                                    ? "BLOCKS"
+                                    : type.startsWith("ITEM")
+                                            ? "ITEMS"
+                                            : type.startsWith("CONTAINER")
+                                                    ? "CONTAINERS"
+                                                    : type.startsWith("SESSION")
+                                                            ? "SESSIONS"
+                                                            : "KILLS";
             groups.computeIfAbsent(compact ? family + "|" + material : key, k -> new ArrayList<>())
                     .add(key);
         }
@@ -111,7 +117,8 @@ public final class EventStatistics {
             String first = group.getValue().getFirst();
             String type = first.split("\\|", 2)[0];
             String material = first.contains("|") ? first.substring(first.indexOf('|') + 1) : "";
-            boolean neutral = type.endsWith("KILL"), session = type.startsWith("SESSION");
+            boolean click = type.equals("BLOCK_CLICK");
+            boolean neutral = type.endsWith("KILL") || click, session = type.startsWith("SESSION");
             var plus = new ArrayList<String>();
             var minus = new ArrayList<String>();
             for (String key : group.getValue())
@@ -123,11 +130,13 @@ public final class EventStatistics {
             String icon =
                     session
                             ? "minecraft:player_head"
-                            : neutral
-                                    ? (material.equals("minecraft:player")
-                                            ? "minecraft:player_head"
-                                            : material + "_spawn_egg")
-                                    : material;
+                            : click
+                                    ? material
+                                    : neutral
+                                            ? (material.equals("minecraft:player")
+                                                    ? "minecraft:player_head"
+                                                    : material + "_spawn_egg")
+                                            : material;
             String label =
                     session ? "Sessions" : material.replace("minecraft:", "").replace('_', ' ');
             String tip = String.join(" / ", group.getValue()).replace('|', ' ').replace('_', ' ');
@@ -137,7 +146,7 @@ public final class EventStatistics {
                                 + (type.startsWith("BLOCK")
                                         ? "placed / broken"
                                         : session ? "logins / logouts" : "added / removed");
-            else if (neutral) tip += "\nKill count";
+            else if (neutral) tip += click ? "\nClick count" : "\nKill count";
             result.add(
                     new Column(
                             label,

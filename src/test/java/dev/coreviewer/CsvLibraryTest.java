@@ -44,8 +44,9 @@ class CsvLibraryTest {
                                 .readAllBytes(),
                         StandardCharsets.UTF_8);
         var result = CsvEvents.read(text, "server", Set.of("minecraft:zombie"));
-        assertEquals(13, result.events().size());
-        assertEquals(8, result.skipped());
+        assertEquals(14, result.events().size());
+        assertEquals(7, result.skipped());
+        assertEquals(1, result.events().stream().filter(e -> e.type() == EventType.BLOCK_CLICK).count());
         assertEquals(0, result.unknownTime());
         assertEquals(2, result.events().stream().filter(e -> e instanceof SessionEvent).count());
         assertEquals(2, result.events().stream().filter(e -> e instanceof ContainerEvent).count());

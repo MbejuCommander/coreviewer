@@ -32,7 +32,7 @@ public final class EventCodec {
                 EventType type = EventType.valueOf(row.getAsJsonObject().get("type").getAsString());
                 CoreTraceEvent event =
                         switch (type) {
-                            case BLOCK_BREAK, BLOCK_PLACE -> GSON.fromJson(row, BlockEvent.class);
+                            case BLOCK_BREAK, BLOCK_PLACE, BLOCK_CLICK -> GSON.fromJson(row, BlockEvent.class);
                             case PLAYER_KILL, MOB_KILL -> GSON.fromJson(row, KillEvent.class);
                             case ITEM_ADD, ITEM_REMOVE -> GSON.fromJson(row, ItemEvent.class);
                             case CONTAINER_ADD, CONTAINER_REMOVE ->
@@ -99,7 +99,7 @@ public final class EventCodec {
                 "" + c.simulated(),
                 c.source(),
                 event instanceof BlockEvent
-                        ? "block"
+                        ? (event.type() == EventType.BLOCK_CLICK ? "click" : "block")
                         : event instanceof ContainerEvent
                                 ? "container"
                                 : event instanceof SessionEvent
@@ -109,6 +109,7 @@ public final class EventCodec {
                 switch (event.type()) {
                     case BLOCK_BREAK -> "block_break";
                     case BLOCK_PLACE -> "block_place";
+                    case BLOCK_CLICK -> "interaction";
                     case ITEM_ADD -> "item_pickup";
                     case ITEM_REMOVE -> "item_drop";
                     case CONTAINER_ADD -> "item_add";

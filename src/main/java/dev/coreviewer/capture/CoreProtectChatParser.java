@@ -13,7 +13,7 @@ public final class CoreProtectChatParser {
             Pattern.compile(
                     "^([0-9]+(?:[.,][0-9]+)?)/?([mhd]) ago [+-] (\\S+)"
                         + " (broke|placed|killed|added|removed|picked"
-                        + " up|dropped|deposited|withdrew|threw|shot|logged in|logged out)(?:"
+                        + " up|dropped|deposited|withdrew|threw|shot|clicked|logged in|logged out)(?:"
                         + " (?:x([0-9]+) )?([\\w:#.-]+?)(?:\\s*\\(↓\\))?)?\\.(?:\\s.*)?$");
     private static final Pattern POS =
             Pattern.compile("\\(x(-?\\d+)/y(-?\\d+)/z(-?\\d+)/([^()]+)\\)");
@@ -127,6 +127,7 @@ public final class CoreProtectChatParser {
                     context,
                     verb.equals("broke") ? EventType.BLOCK_BREAK : EventType.BLOCK_PLACE,
                     identifier);
+        if (verb.equals("clicked")) return new BlockEvent(context, EventType.BLOCK_CLICK, identifier);
         if (verb.equals("killed")) {
             // CoreProtect renders mob registry identifiers but player usernames without a type tag.
             boolean mob = entities.contains(identifier);

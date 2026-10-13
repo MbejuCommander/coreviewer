@@ -178,13 +178,14 @@ public final class CoreTraceConfigScreen {
                         c.captureEndSound,
                         "minecraft:entity.player.levelup",
                         v -> c.captureEndSound = v));
-        var csv = builder.getOrCreateCategory(text("CSV"));
+        var csv = builder.getOrCreateCategory(text("CSV / EXCEL"));
         csv.addEntry(
                 e.startTextDescription(
                                 text(
                                         "Captures save automatically to coreviewer/csv."
                                             + " Import/export use this shared folder. Copy"
-                                            + " CoreTrace CSVs here, Refresh, then select them."
+                                            + " CoreTrace CSVs here, or import an .xlsx workbook."
+                                            + " Each compatible worksheet becomes a selected CSV."
                                             + " Imports without server metadata bind to the current"
                                             + " server when selected."))
                         .build());
@@ -206,10 +207,10 @@ public final class CoreTraceConfigScreen {
                         .build());
         csv.addEntry(
                 new ActionEntry(
-                        "Open Import / Export Folder", CsvLibraryScreen::openFolder, () -> true));
+                        "Open Data Folder", CsvLibraryScreen::openFolder, () -> true));
         csv.addEntry(
                 new ActionEntry(
-                        "Select CSV Files",
+                        "Manage Investigation Files",
                         () -> {
                             var mc = net.minecraft.client.Minecraft.getInstance();
                             CoreTraceClient.service
@@ -240,6 +241,14 @@ public final class CoreTraceConfigScreen {
                 true,
                 v -> c.blockView = v,
                 "Applies to the active static investigation view.");
+        toggle(
+                view,
+                e,
+                "Click View",
+                c.clickView,
+                true,
+                v -> c.clickView = v,
+                "Shows the clicked block at its recorded coordinates, including chests and ender chests. Uses the same arrows, labels and wall settings as other events.");
         toggle(
                 view,
                 e,
@@ -306,6 +315,11 @@ public final class CoreTraceConfigScreen {
                 e.startColorField(text("Block Place Color"), c.placeColor)
                         .setDefaultValue(0x55FF99)
                         .setSaveConsumer(v -> c.placeColor = v)
+                        .build());
+        view.addEntry(
+                e.startColorField(text("Click Color"), c.clickColor)
+                        .setDefaultValue(0x66CCFF)
+                        .setSaveConsumer(v -> c.clickColor = v)
                         .build());
         view.addEntry(
                 e.startIntSlider(text("Alpha"), c.alpha, 0, 255)

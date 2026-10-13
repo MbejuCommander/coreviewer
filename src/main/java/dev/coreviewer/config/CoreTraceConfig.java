@@ -23,10 +23,10 @@ public final class CoreTraceConfig implements Cloneable {
     public boolean autoCapture = true, autoPageAdvance = false;
     public int commandDelayMs = 1500;
     public boolean autoSave = true, backup = true;
-    public boolean blockView = true, killView = true, itemView = true;
+    public boolean blockView = true, clickView = true, killView = true, itemView = true;
     public boolean throughWalls = true, outline = true, ghostBlocks = true;
     public boolean arrows = true, playerDeaths = true, mobDeaths = true, playerHeads = false;
-    public int breakColor = 0xFF5555, placeColor = 0x55FF99, arrowColor = 0xFFD166;
+    public int breakColor = 0xFF5555, placeColor = 0x55FF99, clickColor = 0x66CCFF, arrowColor = 0xFFD166;
     public int alpha = 160;
     public boolean labels = true, arrowsSamePlayer = true, tintGhosts = false;
     public int maxVisibleEvents = 10;
@@ -85,6 +85,7 @@ public final class CoreTraceConfig implements Cloneable {
         replayHudColor &= 0xFFFFFF;
         breakColor &= 0xFFFFFF;
         placeColor &= 0xFFFFFF;
+        clickColor &= 0xFFFFFF;
         arrowColor &= 0xFFFFFF;
         arrowSize = Float.isFinite(arrowSize) ? Math.clamp(arrowSize, 0.25f, 4) : 1;
         arrowSpeed = Float.isFinite(arrowSpeed) ? Math.clamp(arrowSpeed, 0.25f, 4) : 1;

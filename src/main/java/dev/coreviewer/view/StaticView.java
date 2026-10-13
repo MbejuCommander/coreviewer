@@ -208,7 +208,7 @@ public final class StaticView {
         var list = new ArrayList<CoreTraceEvent>();
         long now = System.currentTimeMillis();
         String[] blocks = {"minecraft:diamond_ore", "minecraft:stone", "minecraft:oak_planks"};
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 8; i++) {
             var p =
                     new EventContext.Position(
                             origin.getX() - 6 + i * 2, origin.getY(), origin.getZ() + 12);
@@ -247,6 +247,7 @@ public final class StaticView {
                                         null,
                                         "minecraft:zombie",
                                         null);
+                        case 7 -> new BlockEvent(ctx, EventType.BLOCK_CLICK, "minecraft:ender_chest");
                         default ->
                                 new ItemEvent(
                                         ctx,

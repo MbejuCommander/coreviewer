@@ -1,15 +1,12 @@
-# Coreviewer investigator 0.9.0 — Minecraft 26.3 Fabric
+# Coreviewer investigator 0.10.0 — Minecraft 26.3 Fabric
 
-Configure now opens settings directly. Session holograms use available current player skins; player deaths use a custom memorial with the victim's portrait and vanilla flowers. Container events use colored chest-style slots, and optional UTC server-time labels are enabled by default.
+Coreviewer now imports compatible event sheets from `.xlsx` workbooks and recognizes CoreProtect block-click actions. Clicked blocks appear as configurable holograms in static view and replay, participate in chronological arrows, and have a dedicated Clicks category in Statistics with per-player counts and individual coordinates. Chest and ender chest clicks use block-shaped item models where the normal block renderer has no baked model.
 
-Statistics gains a category dropdown, item/player searches, a fixed player column, vertical page navigation, per-column ascending/descending sorting, count selection for compact columns and Reset filters. Click a player, then a material icon, to inspect individual actions and exact recorded coordinates in bounded evidence pages.
+Use **Settings → CSV / EXCEL → Manage Investigation Files → Import .xlsx** to select a workbook. Each compatible sheet becomes a selected CSV in a new import folder. Events from all selected files are ordered by recorded timestamp. The source workbook remains intact. Only `.xlsx` is supported; `.xls` is not. Simple Mode must be OFF to import.
 
-CSV deletion removes empty parent folders without deleting other contents or the library root. The default replay window is now 10; existing saved limits remain supported.
+Install `Coreviewer-Investigator-0.10.0-MC26.3.jar`, replacing the prior Coreviewer JAR. Requires Minecraft 26.3, Java 25, Fabric Loader 0.19.5+, Fabric API 0.161.0+26.3 and Cloth Config 26.3.158; Mod Menu 21.0.0 is optional. CoreTrace can remain installed. Excel reader libraries are bundled inside the Coreviewer JAR.
 
-Install `Coreviewer-Investigator-0.9.0-MC26.3.jar`, replacing the prior Coreviewer JAR. Requires Minecraft 26.3, Java 25, Fabric Loader 0.19.5+, Fabric API 0.161.0+26.3 and Cloth Config 26.3.158; Mod Menu 21.0.0 is optional. CoreTrace can remain installed. Current skins are not historical skin records; unavailable data is never fabricated.
+See README and changelog for usage, limits, build instructions and validation details. To publish on GitHub, upload the source ZIP as repository contents (or commit its extracted contents), then attach the JAR to a GitHub Release. The ZIP contains source, Gradle wrapper, documentation and tests, without local game data or old JARs. A GitHub Wiki can use README.md as its `Home` page.
 
-See README and changelog for usage, build instructions and validation details.
+Validation: 65 unit tests and one isolated Minecraft client rendering scenario passed. Live CoreProtect-server validation remains separate from simulated tests.
 
-To publish on GitHub, upload the source ZIP as repository contents (or commit its extracted contents), then attach `Coreviewer-Investigator-0.9.0-MC26.3.jar` to a GitHub Release. The ZIP contains source, Gradle wrapper, documentation and tests; it does not contain local game data or older JARs. A GitHub Wiki can use README.md as its `Home` page; update relative screenshot links if the Wiki is stored separately.
-
-Verified: 62 unit tests and all seven local Minecraft client scenarios passed, including 50-player statistics navigation, material drilldown, current-profile lookup, memorials and Improved Transparency. Live CoreProtect-server testing is separate from simulated integration tests.

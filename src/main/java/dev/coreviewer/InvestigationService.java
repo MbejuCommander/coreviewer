@@ -220,6 +220,51 @@ public final class InvestigationService implements AutoCloseable {
                 });
     }
 
+    public CompletableFuture<String> importXlsx(Path source, String server) {
+        return execute(
+                () -> {
+                    ensureLoaded();
+                    if (config.simpleMode)
+                        return "Disable Simple Mode before importing a workbook.";
+                    var sheets = dev.coreviewer.storage.XlsxImporter.read(source);
+                    var compatible = new ArrayList<Map.Entry<String, List<CoreTraceEvent>>>();
+                    for (var sheet : sheets) {
+                        var parsed =
+                                dev.coreviewer.storage.CsvEvents.read(
+                                        sheet.csv(), server, Set.of());
+                        if (!parsed.events().isEmpty())
+                            compatible.add(Map.entry(sheet.name(), parsed.events()));
+                    }
+                    if (compatible.isEmpty()) return "No sheets contained supported events.";
+                    String stem =
+                            source.getFileName()
+                                    .toString()
+                                    .replaceFirst("(?i)\\.xlsx$", "")
+                                    .replaceAll("[^A-Za-z0-9._ -]", "_");
+                    if (stem.length() > 70) stem = stem.substring(0, 70);
+                    if (stem.isBlank()) stem = "workbook";
+                    String first =
+                            dev.coreviewer.storage.CaptureFolders.reserve(
+                                    library.folder(), "import-" + stem);
+                    String directory = first.substring(0, first.lastIndexOf('/') + 1);
+                    for (int i = 0; i < compatible.size(); i++) {
+                        var sheet = compatible.get(i);
+                        String sheetName = sheet.getKey().replaceAll("[^A-Za-z0-9._ -]", "_");
+                        if (sheetName.length() > 40) sheetName = sheetName.substring(0, 40);
+                        if (sheetName.isBlank()) sheetName = "sheet";
+                        library.write(
+                                directory
+                                        + String.format(
+                                                Locale.ROOT, "%02d-%s.csv", i + 1, sheetName),
+                                sheet.getValue(),
+                                server);
+                    }
+                    currentServer = server;
+                    refreshLibrary();
+                    return "Imported " + compatible.size() + " workbook sheets into " + directory;
+                });
+    }
+
     public CompletableFuture<String> selectCsv(String name, boolean value, String server) {
         return execute(
                 () -> {

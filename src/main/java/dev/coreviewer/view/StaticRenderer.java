@@ -262,6 +262,22 @@ public final class StaticRenderer {
                                                 sources.get(i)
                                                         .colorInWorld(state, context.level(), pos);
                                 }
+                                // Chest block models use a block-entity renderer and have no baked
+                                // geometry. Show their item model at the clicked position as well.
+                                if (b.type() == EventType.BLOCK_CLICK
+                                        && Set.of("minecraft:chest", "minecraft:trapped_chest",
+                                                        "minecraft:ender_chest")
+                                                .contains(b.block())) {
+                                    var itemId = Identifier.tryParse(b.block());
+                                    var clickedItem = itemId == null
+                                            ? Optional.<Item>empty()
+                                            : BuiltInRegistries.ITEM.getOptional(itemId);
+                                    if (clickedItem.isPresent())
+                                        decorations = List.of(new Decoration(
+                                                cachedDecoration("click:" + b.block(),
+                                                        new ItemStack(clickedItem.get())),
+                                                .5, .5, .5, 1, 1, 1));
+                                }
                             } else if (event instanceof KillEvent k
                                     && k.type() == EventType.PLAYER_KILL
                                     && figureCount < 128) {
@@ -657,7 +673,8 @@ public final class StaticRenderer {
     }
 
     private static float replayScale(CoreTraceEvent event, CoreTraceConfig c) {
-        if (!ReplayController.active() || !(event instanceof BlockEvent)) return 1;
+        if (!ReplayController.active() || !(event instanceof BlockEvent)
+                || event.type() == EventType.BLOCK_CLICK) return 1;
         float progress = (float) ReplayController.engine.progress(event, c);
         return event.type() == EventType.BLOCK_BREAK ? 1 - progress : Math.max(.03f, progress);
     }
@@ -737,6 +754,7 @@ public final class StaticRenderer {
         return switch (e.type()) {
             case SESSION_LOGIN -> 0x55FF55;
             case SESSION_LOGOUT -> 0xFF5555;
+            case BLOCK_CLICK -> c.clickColor;
             case BLOCK_PLACE, ITEM_ADD, CONTAINER_ADD -> c.placeColor;
             default -> c.breakColor;
         };
@@ -793,7 +811,7 @@ public final class StaticRenderer {
                         + approximate
                         + "#"
                         + index
-                        + (e.type() == EventType.BLOCK_BREAK ? " broke" : " placed"),
+                        + (e.type() == EventType.BLOCK_BREAK ? " broke" : e.type() == EventType.BLOCK_CLICK ? " clicked" : " placed"),
                 shortName(((BlockEvent) e).block()),
                 shortName(e.context().actor()));
     }

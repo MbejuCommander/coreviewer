@@ -11,8 +11,13 @@ import java.util.*;
 /** Called only by the serialized storage worker. The visible library never follows symlinks. */
 public final class CsvLibrary {
     public record FileEntry(String name, boolean selected, int count, String warning) {}
+    public record SourceFile(String name, String workbook, String sheet, List<CoreTraceEvent> events) {}
 
-    private record Binding(String name, boolean selected, String server) {}
+    private record Binding(String name, boolean selected, String server, String workbook, String sheet) {
+        Binding(String name, boolean selected, String server) {
+            this(name, selected, server, "", "");
+        }
+    }
 
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().create();
     private final Path root, folder;
@@ -194,6 +199,29 @@ public final class CsvLibrary {
         return List.copyOf(combined);
     }
 
+    /** Source snapshots are read on the storage worker, preserving workbook/sheet provenance. */
+    public List<SourceFile> selectedSources(boolean simple) throws IOException {
+        var sources = new ArrayList<SourceFile>();
+        for (var binding : bindings) {
+            if (!(simple ? binding.name().equals(simpleFile) : binding.selected())) continue;
+            var result = read(binding);
+            String workbook = binding.workbook() == null ? "" : binding.workbook();
+            String sheet = binding.sheet() == null ? "" : binding.sheet();
+            sources.add(new SourceFile(binding.name(), workbook, sheet, result.events()));
+        }
+        return List.copyOf(sources);
+    }
+
+    public void markWorkbookSheet(String name, String workbook, String sheet) throws IOException {
+        path(name);
+        for (int i = 0; i < bindings.size(); i++) {
+            var binding = bindings.get(i);
+            if (binding.name().equals(name))
+                bindings.set(i, new Binding(name, binding.selected(), binding.server(), workbook, sheet));
+        }
+        saveManifest();
+    }
+
     public void write(String name, List<CoreTraceEvent> events, String server) throws IOException {
         Files.createDirectories(folder);
         AtomicFiles.write(path(name), EventCodec.csv(events));
@@ -219,7 +247,7 @@ public final class CsvLibrary {
             var b = bindings.get(i);
             if (b.name().equals(name))
                 bindings.set(
-                        i, new Binding(name, selected, b.server().isBlank() ? server : b.server()));
+                        i, new Binding(name, selected, b.server().isBlank() ? server : b.server(), b.workbook(), b.sheet()));
         }
         saveManifest();
     }

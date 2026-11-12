@@ -11,7 +11,9 @@
       "dev.coreviewer.PhaseFiveGameTest",
       "dev.coreviewer.CustomizationGameTest",
       "dev.coreviewer.LibraryGameTest",
-      "dev.coreviewer.StatisticsGameTest"
+      "dev.coreviewer.StatisticsGameTest",
+      "dev.coreviewer.FileNavigationGameTest",
+      "dev.coreviewer.ReportGameTest"
     ]
   }
 }

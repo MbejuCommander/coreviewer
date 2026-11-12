@@ -122,4 +122,41 @@ class PhaseFourTest {
         e.seek(Double.MAX_VALUE);
         assertEquals(e.end(), e.cursor());
     }
+
+    @Test
+    void reverseGroupsTiesHonorsSpeedAndStopsAtStart() {
+        var e = new ReplayEngine(); var c = new CoreTraceConfig();
+        c.smartTimeline = false; c.timelineSpeed = 2;
+        e.load(List.of(event(2000, EventType.BLOCK_PLACE), event(4000, EventType.BLOCK_BREAK), event(4000, EventType.BLOCK_CLICK)));
+        e.seek(4000); e.playReverse(); e.advance(1, c);
+        assertEquals(3998, e.cursor()); assertEquals(1, e.visibleCount());
+        e.toggle(); double paused = e.cursor(); e.advance(100, c);
+        assertEquals(paused, e.cursor());
+        e.toggle(); assertTrue(e.reversed()); e.advance(5000, c);
+        assertEquals(e.start(), e.cursor()); assertFalse(e.playing());
+        assertEquals(0, e.visibleCount());
+    }
+
+    @Test
+    void reverseFromBeginningStartsAtEndAndCanChangeDirection() {
+        var e = new ReplayEngine(); var c = new CoreTraceConfig(); c.smartTimeline = false;
+        e.load(List.of(event(2000, EventType.BLOCK_BREAK)));
+        e.playReverse(); assertEquals(e.end(), e.cursor());
+        e.advance(200, c); double before = e.cursor(); e.play(); e.advance(100, c);
+        assertFalse(e.reversed()); assertEquals(before + 100, e.cursor());
+        e.restart(); assertFalse(e.playing()); assertFalse(e.reversed()); assertEquals(e.start(), e.cursor());
+    }
+
+    @Test
+    void reverseSmartTimelineCompressesLongGapsAndPreservesAnimationTail() {
+        var e = new ReplayEngine(); var c = new CoreTraceConfig();
+        e.load(List.of(event(2000, EventType.BLOCK_BREAK), event(10_802_000, EventType.BLOCK_PLACE)));
+        e.seek(10_802_000); e.playReverse(); e.advance(1000, c);
+        assertEquals(10_801_000, e.cursor());
+        e.advance(1000, c); assertEquals(3000, e.cursor());
+        e.advance(500, c); assertEquals(2500, e.cursor()); assertEquals(1, e.visibleCount());
+        e.seek(10_802_000); c.smartTimeline = false; e.playReverse(); e.advance(2000, c);
+        assertEquals(10_800_000, e.cursor());
+        c.enabled = false; e.advance(100, c); assertFalse(e.playing());
+    }
 }

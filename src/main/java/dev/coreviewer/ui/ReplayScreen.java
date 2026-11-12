@@ -84,13 +84,13 @@ public final class ReplayScreen extends Screen {
 
         button("Next", 206, 111, 94, () -> ReplayController.engine.next());
 
-        button("Restart", 0, 137, 94, () -> ReplayController.engine.seekFraction(0));
+        button("Restart", 0, 137, 70, () -> ReplayController.engine.restart());
 
         button(
                 "Stop",
-                103,
+                154,
                 137,
-                94,
+                70,
                 () -> {
                     StaticView.hide();
                     message = "Replay stopped.";
@@ -98,14 +98,24 @@ public final class ReplayScreen extends Screen {
 
         button(
                 "Settings",
-                206,
+                230,
                 137,
-                94,
+                70,
                 () -> minecraft.gui.setScreen(CoreTraceConfigScreen.create(this)));
 
-        button("View paused", 0, 202, 146, () -> minecraft.gui.setScreen(null));
+        button("Reverse", 77, 137, 70, () -> {
+            if (ReplayController.active()) {
+                ReplayController.engine.playReverse();
+                minecraft.gui.setScreen(null);
+            } else message = "Load a replay first.";
+        });
+        button("Controls", 103, 202, 94, () -> {
+            if (ReplayController.active()) minecraft.gui.setScreen(new ReplayControlsScreen());
+            else message = "Load a replay first.";
+        });
+        button("View paused", 0, 202, 94, () -> minecraft.gui.setScreen(null));
 
-        button("Done", 154, 202, 146, this::onClose);
+        button("Done", 206, 202, 94, this::onClose);
     }
 
     private String worldLabel() {

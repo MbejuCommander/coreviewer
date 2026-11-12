@@ -118,9 +118,15 @@ public final class CoreTraceClient implements ClientModInitializer {
                     gameClient.execute(
                             () -> {
                                 ReplayController.configure(service.config());
-                                if (!service.enabled()) StaticView.hide();
+                                if (!service.enabled()) {
+                                    StaticView.hide();
+                                    dev.coreviewer.ui.TeleportTourScreen.stop();
+                                }
                             });
                 });
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("coreviewer", "tp_tour"),
+                (g, dt) -> dev.coreviewer.ui.TeleportTourScreen.drawHud(g));
         StaticRenderer.register();
         ReplayController.register(config);
         if (config.enabled) service.initialize();
@@ -129,6 +135,7 @@ public final class CoreTraceClient implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(
                 mc -> {
                     StaticView.hide();
+                    dev.coreviewer.ui.TeleportTourScreen.stop();
                     service.close();
                 });
         ClientSendMessageEvents.COMMAND.register(
@@ -162,6 +169,7 @@ public final class CoreTraceClient implements ClientModInitializer {
                 (handler, mc) -> {
                     stopCapture("Disconnected.");
                     StaticView.hide();
+                    dev.coreviewer.ui.TeleportTourScreen.stop();
                 });
         ClientCommandRegistrationCallback.EVENT.register(
                 (dispatcher, registry) -> {

@@ -9,6 +9,13 @@ import net.minecraft.network.chat.Component;
 
 public final class AnimatedButton extends Button {
     private double hover;
+    private int background = 0xF0192635;
+
+    public AnimatedButton background(int color) {
+        background = color;
+        return this;
+    }
+
     private long frame = System.nanoTime();
     private final String subtitle;
 
@@ -28,7 +35,7 @@ public final class AnimatedButton extends Button {
         frame = now;
         int x = getX(), y = getY(), w = getWidth(), h = getHeight();
         var font = Minecraft.getInstance().font;
-        g.fill(x, y, x + w, y + h, active ? 0xF0192635 : 0xF0141D29);
+        g.fill(x, y, x + w, y + h, active ? background : 0xF0141D29);
         g.fill(x, y, x + w, y + 1, 0xFF354B60);
         g.fill(x, y + h - 1, x + w, y + h, 0xFF354B60);
         g.fill(x, y, x + 2, y + h, active ? 0xFF54CFBF : 0xFF45656C);

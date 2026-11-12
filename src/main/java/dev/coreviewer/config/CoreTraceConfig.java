@@ -26,7 +26,10 @@ public final class CoreTraceConfig implements Cloneable {
     public boolean blockView = true, clickView = true, killView = true, itemView = true;
     public boolean throughWalls = true, outline = true, ghostBlocks = true;
     public boolean arrows = true, playerDeaths = true, mobDeaths = true, playerHeads = false;
-    public int breakColor = 0xFF5555, placeColor = 0x55FF99, clickColor = 0x66CCFF, arrowColor = 0xFFD166;
+    public int breakColor = 0xFF5555,
+            placeColor = 0x55FF99,
+            clickColor = 0x66CCFF,
+            arrowColor = 0xFFD166;
     public int alpha = 160;
     public boolean labels = true, arrowsSamePlayer = true, tintGhosts = false;
     public int maxVisibleEvents = 10;
@@ -50,10 +53,17 @@ public final class CoreTraceConfig implements Cloneable {
     public String staticPreviousKey = "key.keyboard.v",
             staticNextKey = "key.keyboard.b",
             staticMenuKey = "key.keyboard.g";
+    public boolean linkedTpModeKeys = true;
+    public String tpPreviousKey = "key.keyboard.v",
+            tpNextKey = "key.keyboard.b",
+            tpMovementLockKey = "key.keyboard.u";
     public String replayStartKey = "key.keyboard.j",
             replayRestartKey = "key.keyboard.k",
             replayStopKey = "key.keyboard.l",
             replayMenuKey = "key.keyboard.h";
+    public String replayReverseKey = "key.keyboard.r", replayControlsKey = "key.keyboard.u";
+    public double replayToolbarX = -1, replayToolbarY = -1;
+    public float replayToolbarScale = 1;
     public transient int windowFrom = -1, windowTo = Integer.MAX_VALUE;
 
     public static double parseSmartTimeline(String input) {
@@ -64,6 +74,10 @@ public final class CoreTraceConfig implements Cloneable {
     }
 
     public void validate() {
+        replayToolbarScale =
+                Float.isFinite(replayToolbarScale) ? Math.clamp(replayToolbarScale, .75f, 1.5f) : 1;
+        replayToolbarX = Double.isFinite(replayToolbarX) ? Math.clamp(replayToolbarX, -1, 1) : -1;
+        replayToolbarY = Double.isFinite(replayToolbarY) ? Math.clamp(replayToolbarY, -1, 1) : -1;
         if (captureFolderName == null) captureFolderName = "";
         captureFolderName = dev.coreviewer.storage.CaptureFolders.validate(captureFolderName);
         if (!Double.isFinite(smartTimelineSeconds) || smartTimelineSeconds < 0)
@@ -93,6 +107,14 @@ public final class CoreTraceConfig implements Cloneable {
         if (!speeds.contains(blockBreakSpeed)) blockBreakSpeed = 1;
         if (!speeds.contains(blockPlaceSpeed)) blockPlaceSpeed = 1;
         if (!speeds.contains(timelineSpeed)) timelineSpeed = 1;
+        if (tpPreviousKey == null || tpPreviousKey.isBlank()) tpPreviousKey = "key.keyboard.v";
+        if (tpNextKey == null || tpNextKey.isBlank()) tpNextKey = "key.keyboard.b";
+        if (tpMovementLockKey == null || tpMovementLockKey.isBlank())
+            tpMovementLockKey = "key.keyboard.u";
+        if (replayReverseKey == null || replayReverseKey.isBlank())
+            replayReverseKey = "key.keyboard.r";
+        if (replayControlsKey == null || replayControlsKey.isBlank())
+            replayControlsKey = "key.keyboard.u";
         if (playPauseKey == null || playPauseKey.isBlank())
             playPauseKey = "key.keyboard.right.shift";
         if (forwardKey == null || forwardKey.isBlank()) forwardKey = "key.keyboard.comma";

@@ -21,6 +21,7 @@ public final class PhaseFourGameTest implements FabricClientGameTest {
             c.throughWalls = true;
             c.playPauseKey = "key.keyboard.f6";
             c.timelineSpeed = 1;
+            c.replayToolbarScale = .75f;
             c.blockBreakSpeed = .5;
             c.blockPlaceSpeed = 2;
             CoreTraceClient.service.configure(c).join();
@@ -80,7 +81,7 @@ public final class PhaseFourGameTest implements FabricClientGameTest {
             context.waitTicks(5);
             context.runOnClient(
                     mc -> {
-                        if (StaticRenderer.visibleCount != 7
+                        if (StaticRenderer.visibleCount != 8
                                 || StaticRenderer.figureCount != 2
                                 || StaticRenderer.itemCount != 2)
                             throw new AssertionError(
@@ -89,6 +90,54 @@ public final class PhaseFourGameTest implements FabricClientGameTest {
                             throw new AssertionError("Demo changed stored evidence");
                     });
             context.takeScreenshot("phase4-completed-actions");
+            context.getInput().pressKey(InputConstants.KEY_R);
+            context.waitTicks(3);
+            context.getInput().pressKey(InputConstants.KEY_U);
+            context.waitTicks(3);
+            double reverseBefore = context.computeOnClient(mc -> ReplayController.engine.cursor());
+            context.waitTicks(4);
+            context.runOnClient(mc -> {
+                if (!(mc.gui.screen() instanceof dev.coreviewer.ui.ReplayControlsScreen)
+                        || !ReplayController.engine.playing() || !ReplayController.engine.reversed()
+                        || ReplayController.engine.cursor() >= reverseBefore)
+                    throw new AssertionError("Reverse playback or non-pausing cursor failed");
+            });
+            context.clickScreenButton("||");
+            context.waitTicks(2);
+            context.runOnClient(mc -> {
+                if (ReplayController.engine.playing()) throw new AssertionError("Pause button failed");
+            });
+            context.runOnClient(mc -> {
+                var screen = (dev.coreviewer.ui.ReplayControlsScreen) mc.gui.screen();
+                var left = new net.minecraft.client.input.MouseButtonInfo(0, 0);
+                if (!screen.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(12, 88, left), false))
+                    throw new AssertionError("Drag grip did not accept click");
+                screen.mouseDragged(new net.minecraft.client.input.MouseButtonEvent(10000, 10000, left), 100, 100);
+                screen.mouseReleased(new net.minecraft.client.input.MouseButtonEvent(10000, 10000, left));
+                var saved = CoreTraceClient.service.config();
+                if (saved.replayToolbarX != 1 || saved.replayToolbarY != 1)
+                    throw new AssertionError("Dragged position was not clamped/saved");
+                mc.gui.setScreen(new dev.coreviewer.ui.ReplayControlsScreen());
+                var restored = mc.gui.screen().children().stream()
+                        .filter(child -> child instanceof net.minecraft.client.gui.components.Button)
+                        .map(child -> (net.minecraft.client.gui.components.Button) child).findFirst().orElseThrow();
+                if (restored.getX() <= 8 || restored.getY() <= 100 || restored.getWidth() >= 34 || restored.getHeight() >= 20)
+                    throw new AssertionError("Toolbar did not restore its position");
+            });
+            context.takeScreenshot("replay-toolbar");
+            context.clickScreenButton("|<");
+            context.clickScreenButton(">");
+            context.waitTicks(4);
+            context.runOnClient(mc -> {
+                if (!ReplayController.engine.playing() || ReplayController.engine.reversed())
+                    throw new AssertionError("Forward button failed");
+            });
+            context.getInput().pressKey(InputConstants.KEY_U);
+            context.waitTicks(2);
+            context.runOnClient(mc -> {
+                if (mc.gui.screen() != null) throw new AssertionError("Cursor shortcut failed to close");
+            });
+
             c.enabled = false;
             CoreTraceClient.service.configure(c).join();
             context.waitTicks(3);

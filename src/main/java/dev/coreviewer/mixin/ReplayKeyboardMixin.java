@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ReplayKeyboardMixin {
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void coreviewer$shortcuts(long window, int action, KeyEvent event, CallbackInfo ci) {
-        if (dev.coreviewer.replay.ReplayController.handleKey(action, event)) ci.cancel();
+        if (dev.coreviewer.ui.TeleportTourScreen.handleKey(action, event)
+                || dev.coreviewer.replay.ReplayController.handleKey(action, event)) ci.cancel();
     }
 }

@@ -18,6 +18,8 @@ import java.time.format.DateTimeFormatter;
 public final class ReplayController {
     public static final ReplayEngine engine = new ReplayEngine();
     private static KeyMapping play,
+            reverse,
+            controls,
             forward,
             backward,
             start,
@@ -33,11 +35,11 @@ public final class ReplayController {
         if (play == null || CoreTraceClient.service == null || !CoreTraceClient.service.enabled())
             return false;
         var mc = Minecraft.getInstance();
-        if (mc.level == null || mc.gui.screen() != null || !mc.isWindowActive()) return false;
+        if (mc.level == null || (mc.gui.screen() != null && !(mc.gui.screen() instanceof dev.coreviewer.ui.ReplayControlsScreen)) || !mc.isWindowActive()) return false;
         var eligible =
                 new java.util.ArrayList<KeyMapping>(
                         java.util.List.of(start, staticMenu, replayMenu));
-        if (active()) eligible.addAll(java.util.List.of(play, forward, backward, restart, stop));
+        if (active()) eligible.addAll(java.util.List.of(play, reverse, controls, forward, backward, restart, stop));
         else if (StaticView.active())
             eligible.addAll(java.util.List.of(staticPrevious, staticNext));
         boolean handled = false;
@@ -114,6 +116,8 @@ public final class ReplayController {
                 KeyMappingHelper.registerKeyMapping(
                         new KeyMapping(
                                 "key.coreviewer.backward", InputConstants.KEY_PERIOD, category));
+        reverse = key("reverse", InputConstants.KEY_R, category);
+        controls = key("controls", InputConstants.KEY_U, category);
         start = key("start", InputConstants.KEY_J, category);
         restart = key("restart", InputConstants.KEY_K, category);
         stop = key("stop", InputConstants.KEY_L, category);
@@ -172,6 +176,7 @@ public final class ReplayController {
                             (StaticView.isDemo() ? "DEMO | " : "")
                                     + "REPLAY "
                                     + (engine.playing() ? "PLAYING" : "PAUSED")
+                                    + (engine.reversed() ? " REVERSE" : " FORWARD")
                                     + " | "
                                     + Math.round(engine.fraction() * 100)
                                     + "% | "
@@ -210,12 +215,17 @@ public final class ReplayController {
                             8,
                             56,
                             0xFFFFFFFF);
+                    g.text(mc.font, label(reverse) + ": reverse/pause | " + label(controls) + ": cursor", 8, 68, 0xFFFFFFFF);
+                    if (mc.gui.screen() == null) dev.coreviewer.ui.ReplayControlsScreen.drawPreview(g);
+
                 });
     }
 
     public static void configure(CoreTraceConfig c) {
         if (play == null) return;
         set(play, c.playPauseKey);
+        set(reverse, c.replayReverseKey);
+        set(controls, c.replayControlsKey);
         set(forward, c.forwardKey);
         set(backward, c.backwardKey);
         set(start, c.replayStartKey);
@@ -266,10 +276,17 @@ public final class ReplayController {
         }
     }
 
+    public static void toggleControls() {
+        var mc = Minecraft.getInstance();
+        if (mc.gui.screen() instanceof dev.coreviewer.ui.ReplayControlsScreen) mc.gui.setScreen(null);
+        else if (active() && mc.gui.screen() == null) mc.gui.setScreen(new dev.coreviewer.ui.ReplayControlsScreen());
+    }
+
     public static void tick() {
         long now = System.nanoTime();
         double elapsed = lastTick == 0 ? 0 : (now - lastTick) / 1e6;
         lastTick = now;
+        boolean reversePressed = pressed(reverse), cursorPressed = pressed(controls);
         boolean toggle = pressed(play),
                 next = pressed(forward),
                 previous = pressed(backward),
@@ -282,7 +299,8 @@ public final class ReplayController {
                 openReplay = pressed(replayMenu);
         var mc = Minecraft.getInstance();
         if (!CoreTraceClient.service.enabled()) return;
-        if (mc.gui.screen() != null || !mc.isWindowActive()) {
+        if (cursorPressed) toggleControls();
+        if ((mc.gui.screen() != null && !(mc.gui.screen() instanceof dev.coreviewer.ui.ReplayControlsScreen)) || !mc.isWindowActive()) {
             engine.pause();
         } else if (mc.level != null) {
             if (openStatic) mc.gui.setScreen(new dev.coreviewer.ui.StaticViewScreen(null));
@@ -295,9 +313,10 @@ public final class ReplayController {
                 if (active()) {
                     engine.advance(elapsed, CoreTraceClient.service.config());
                     if (toggle) engine.toggle();
+                    if (reversePressed) engine.toggleReverse();
                     if (next) engine.next();
                     if (previous) engine.previous();
-                    if (again) engine.seekFraction(0);
+                    if (again) engine.restart();
                 }
             }
         }

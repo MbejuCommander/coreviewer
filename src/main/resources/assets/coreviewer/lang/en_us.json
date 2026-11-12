@@ -18,5 +18,7 @@
   "key.coreviewer.previous_page": "Static: Previous Page",
   "key.coreviewer.next_page": "Static: Next Page",
   "key.coreviewer.static_menu": "Open Static Menu",
-  "key.coreviewer.replay_menu": "Open Replay Menu"
+  "key.coreviewer.replay_menu": "Open Replay Menu",
+  "key.coreviewer.reverse": "Replay: Reverse Playback / Pause",
+  "key.coreviewer.controls": "Replay: Show / Hide Cursor"
 }

@@ -10,6 +10,7 @@ public final class ReplayEngine {
     private List<CoreTraceEvent> events = List.of();
     private double cursor, start, end;
     private boolean playing, approximate;
+    private boolean reversed;
 
     public void load(List<CoreTraceEvent> source) {
         events =
@@ -33,6 +34,7 @@ public final class ReplayEngine {
         end = events.isEmpty() ? 0 : events.getLast().context().timestamp() + 4000d;
         cursor = start;
         playing = false;
+        reversed = false;
     }
 
     public List<CoreTraceEvent> events() {
@@ -73,12 +75,28 @@ public final class ReplayEngine {
 
     public void play() {
         if (!loaded()) return;
+        reversed = false;
         if (cursor >= end) cursor = start;
         playing = true;
     }
 
+    public boolean reversed() { return reversed; }
+
+    public void playReverse() {
+        if (!loaded()) return;
+        reversed = true;
+        if (cursor <= start) cursor = end;
+        playing = true;
+    }
+
+    public void toggleReverse() {
+        if (playing && reversed) pause();
+        else playReverse();
+    }
+
     public void toggle() {
         if (playing) pause();
+        else if (reversed) playReverse();
         else play();
     }
 
@@ -88,6 +106,10 @@ public final class ReplayEngine {
             return;
         }
         if (!playing || !Double.isFinite(elapsedMillis) || elapsedMillis <= 0) return;
+        if (reversed) {
+            advanceReverse(elapsedMillis, config);
+            return;
+        }
         double target = cursor + elapsedMillis * config.timelineSpeed;
         if (config.smartTimeline) {
             int next = visibleCount();
@@ -106,6 +128,32 @@ public final class ReplayEngine {
         }
         cursor = Math.min(end, target);
         if (cursor >= end) pause();
+    }
+
+    private void advanceReverse(double elapsedMillis, CoreTraceConfig config) {
+        double target = cursor - elapsedMillis * config.timelineSpeed;
+        if (config.smartTimeline) {
+            int previous = bound(cursor, false) - 1;
+            double tail = 1000 / Math.min(config.blockBreakSpeed, config.blockPlaceSpeed);
+            double wait = Math.max(tail, config.smartTimelineSeconds * 1000);
+            while (previous >= 0) {
+                double previousTime = events.get(previous).context().timestamp();
+                int after = bound(previousTime, true);
+                double newerTime = after == events.size() ? end : events.get(after).context().timestamp();
+                double skipAt = Math.min(cursor, newerTime - wait);
+                double landing = previousTime + tail;
+                if (landing < skipAt && target <= skipAt) target -= skipAt - landing;
+                if (target > previousTime) break;
+                previous = bound(previousTime, false) - 1;
+            }
+        }
+        cursor = Math.max(start, target);
+        if (cursor <= start) pause();
+    }
+
+    public void restart() {
+        reversed = false;
+        seekFraction(0);
     }
 
     public void seek(double timestamp) {

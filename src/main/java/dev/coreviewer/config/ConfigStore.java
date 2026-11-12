@@ -27,6 +27,10 @@ public final class ConfigStore {
                     com.google.gson.JsonParser.parseString(Files.readString(file))
                             .getAsJsonObject();
             var c = GSON.fromJson(json, CoreTraceConfig.class);
+            if (!json.has("linkedTpModeKeys")) c.linkedTpModeKeys = true;
+            if (!json.has("replayToolbarScale")) c.replayToolbarScale = 1;
+            if (!json.has("replayToolbarX")) c.replayToolbarX = -1;
+            if (!json.has("replayToolbarY")) c.replayToolbarY = -1;
             if (!json.has("smartTimeline")) {
                 if (c.commandDelayMs == 3000) c.commandDelayMs = 1500;
                 if (c.maxVisibleEvents == 500) c.maxVisibleEvents = 10;

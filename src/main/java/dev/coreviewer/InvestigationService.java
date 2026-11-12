@@ -52,6 +52,18 @@ public final class InvestigationService implements AutoCloseable {
         return csvFiles;
     }
 
+    public CompletableFuture<List<CsvLibrary.SourceFile>> reportSources() {
+        return CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        ensureLoaded();
+                        return library.selectedSources(config.simpleMode);
+                    } catch (Exception ex) {
+                        throw new CompletionException(ex);
+                    }
+                }, worker);
+    }
+
     public void entityNames(Set<String> names) {
         library.entityNames(names);
     }
@@ -252,12 +264,10 @@ public final class InvestigationService implements AutoCloseable {
                         String sheetName = sheet.getKey().replaceAll("[^A-Za-z0-9._ -]", "_");
                         if (sheetName.length() > 40) sheetName = sheetName.substring(0, 40);
                         if (sheetName.isBlank()) sheetName = "sheet";
-                        library.write(
-                                directory
-                                        + String.format(
-                                                Locale.ROOT, "%02d-%s.csv", i + 1, sheetName),
-                                sheet.getValue(),
-                                server);
+                        String name = directory + String.format(
+                                Locale.ROOT, "%02d-%s.csv", i + 1, sheetName);
+                        library.write(name, sheet.getValue(), server);
+                        library.markWorkbookSheet(name, source.getFileName().toString(), sheet.getKey());
                     }
                     currentServer = server;
                     refreshLibrary();
@@ -307,6 +317,19 @@ public final class InvestigationService implements AutoCloseable {
                     refreshLibrary();
                     return "CSV deleted.";
                 });
+    }
+
+    /** Persist layout only; dragging controls must not restart captures or rebuild the event index. */
+    public CompletableFuture<String> positionReplayToolbar(double x, double y) {
+        var next = config.copy();
+        next.replayToolbarX = x;
+        next.replayToolbarY = y;
+        next.validate();
+        config = next;
+        return execute(() -> {
+            configStore.save(next);
+            return "Replay toolbar position saved.";
+        });
     }
 
     public CompletableFuture<String> configure(CoreTraceConfig updated) {

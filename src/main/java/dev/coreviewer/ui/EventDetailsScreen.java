@@ -92,6 +92,32 @@ public final class EventDetailsScreen extends Screen {
         if (result == null && !loading) load();
     }
 
+    private boolean scrollEvidence(int delta) {
+        if (loading || result == null) return true;
+        int next =
+                Math.clamp(page + delta, 0, Math.max(0, (int) ((result.total() - 1) / pageSize)));
+        if (next != page) {
+            page = next;
+            load();
+            rebuildWidgets();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        return scrollEvidence((int) -Math.signum(vertical));
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        if (event.key() == com.mojang.blaze3d.platform.InputConstants.KEY_UP)
+            return scrollEvidence(-1);
+        if (event.key() == com.mojang.blaze3d.platform.InputConstants.KEY_DOWN)
+            return scrollEvidence(1);
+        return super.keyPressed(event);
+    }
+
     @Override
     public void extractBackground(GuiGraphicsExtractor g, int mx, int my, float dt) {
         g.fill(0, 0, width, height, 0xF00B121D);

@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.15.3 — 2026-11-12 — Stronger block texture in report donuts
+
+- Increase the block texture inside single-block PDF donuts from 30% to 70% opacity; keep the circular crop and foreground total.
+
+## 0.15.2 — 2026-11-12 — Report preview rendering
+
+- Fix the report builder's player-head blit coordinates and UVs, which could draw a large blue rectangle over the menu.
+- Hide the on-screen "Saved" report notice after 30 seconds.
+- Place a single block's vanilla texture inside its donut hole at 30% opacity, clipped to a circle; leave mixed or non-block donuts untextured.
+
+## 0.15.1 — 2026-11-12 — Player names, skins and donut labels
+
+- Preserve underscores in player names throughout PDF tables, bars, legends and ranking pages.
+- Prefer the current Mojang profile for skin faces, with a recorded UUID fallback; retry transient skin-service failures.
+- Prefetch skin faces when Create Report opens and show them next to player names without blocking the menu.
+- Label donut slices with percentages when they fit, add outside player/category callouts, and compact the right-hand key. Keep the top-12-plus-Others rule and full ranking.
+
+## 0.15.0 — 2026-11-12 — PDF report breakdowns
+
+- Add a report breakdown submenu with independent action/material selections, workbook or CSV splitting, and optional XLSX worksheet splitting. All start OFF.
+- Preserve original workbook and worksheet names for new imports; use folder-based names for earlier imports.
+- Add separate source overviews and action/material pages with player bars, dotted all-player mean, total, active-player mean, median and maximum.
+- Sum known item and container quantities in report comparisons, and keep unknown quantities separate.
+- Add per-player donuts for detailed sections, omit zero-value slices, and group players after the top 12 into Others with a complete ranking table.
+- Hide absent player-summary categories; add red/green vanilla material chips for block actions when their texture is available.
+
+## 0.14.1 — 2026-11-11 — Report skins and player ordering
+
+- Resolve missing player UUIDs from current Mojang names before requesting their skin faces for PDF reports.
+- Accept Mojang's HTTP texture metadata by fetching the trusted texture host over HTTPS.
+- Add ascending and descending player ordering by name, block breaks, placements and other event counts in the report builder; apply it to the summary table and player charts.
+
+## 0.14.0 — 2026-11-11 — Player-grouped TP tour and PDF reports
+
+- Group TP stops by player, preserving chronological order within each player's route and independent radius grouping per player and world.
+- Put the player head next to the name and add a searchable player picker. Choosing a player previews their first stop without sending a teleport until Next is pressed.
+- Add a report builder under Statistics with player, material and chart selections; include selected players with zero matching events.
+- Export vector-chart PDF summaries from selected investigation files, with current skin faces when available, fallback avatars, and source provenance.
+
+## 0.13.0 — 2026-11-11 — TP tour and Statistics navigation
+
+- Include selected evidence regardless of its stored server label while preserving world, actor, material and action separation.
+- Let players move by default in the TP tour. U toggles movement lock and clickable controls; Escape exits.
+- Link TP Back/Next to Static View page keys by default, with independent keys and a configurable movement-lock key in Static View settings.
+- Show TP stop counts beside original Statistics counts only when Radius is positive; add an ender pearl tooltip.
+- Add draggable horizontal and vertical Statistics scrollbars, table arrow navigation, and blur text fields on Enter or outside click.
+- Add live filename search with a magnifier to Investigation Files; navigate both file lists with the mouse wheel or a draggable vertical scrollbar.
+
+## 0.12.0 — 2026-11-11 — Statistics navigation and teleport tours
+
+- Return one level with Escape, retaining the previous statistics table, searches and sorting.
+- Add mouse-wheel and arrow-key navigation to statistics and individual evidence pages.
+- Resolve current player head skins using asynchronous vanilla profiles, including recorded UUIDs and offline names when available.
+- Add action/category header icons, neutral compact headers and independent colored action selections.
+- Add optional Statistics TP Mode with player/action selections, bulk toggles and a chronological location preview.
+- Add editable TP radius: blank/zero retains all events; positive values group against the last retained location independently per actor, world, material and action.
+- Send CoreProtect teleport requests only from explicit Previous/Next actions; never on preview opening.
+- Adapt statistics layout for small windows; document the tour and skin-resolution limits in the README wiki.
+
+## 0.11.0 — 2026-10-20 — Reverse replay and in-world controls
+
+- Add continuous reverse playback, direction-aware pause/resume, reverse Smart Timeline, and automatic pause at the beginning.
+- Add an in-world button bar with a transparent, non-pausing cursor mode; world interaction is blocked while using its buttons.
+- Allow dragging the control bar anywhere on screen, with persistent relative positioning and screen-edge clamping. Replay Button Scale resizes all controls together from 75% to 150%.
+- Add configurable R (reverse/pause) and U (cursor) shortcuts, status direction labels, and access from the replay menu.
+- Keep historical arrows chronological and restore the rolling event window when rewinding.
+
+
 ## 0.10.0 — 2026-10-11 — Click evidence and Excel workbooks
 
 - Capture and import block-click actions and render clicked blocks, including chest and ender-chest holograms, in static view and replay with chronological arrows and configurable click visibility/color.
